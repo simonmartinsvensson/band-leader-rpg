@@ -1,0 +1,24 @@
+import Phaser from "phaser";
+import { GAME_WIDTH, GAME_HEIGHT, BACKGROUND_COLOR } from "./data/constants";
+import { BootScene } from "./scenes/BootScene";
+import { PreloadScene } from "./scenes/PreloadScene";
+import { OverworldScene } from "./scenes/OverworldScene";
+
+const config: Phaser.Types.Core.GameConfig = {
+  type: Phaser.AUTO,
+  parent: "game",
+  // Logical GBA-like resolution, scaled up to fill the viewport.
+  width: GAME_WIDTH,
+  height: GAME_HEIGHT,
+  backgroundColor: BACKGROUND_COLOR,
+  // Crisp scaling for a 16x16-tile pixel-art game.
+  pixelArt: true,
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
+  // Scene flow: Boot -> Preload -> Overworld.
+  scene: [BootScene, PreloadScene, OverworldScene],
+};
+
+new Phaser.Game(config);
