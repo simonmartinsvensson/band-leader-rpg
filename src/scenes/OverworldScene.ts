@@ -11,6 +11,9 @@ import type { DialogueData } from "./DialogueScene";
 import { getDialogue } from "../data/dialogues";
 import { getEncounterZone } from "../data/encounters";
 import { MAPS, MapKeys } from "../data/maps";
+import { createInstance } from "../systems/stats";
+import { SPECIES } from "../data/species";
+import type { BattleData } from "./BattleScene";
 
 /** A warp target: which map to load and which entry point to place the player at. */
 interface Warp {
@@ -42,6 +45,7 @@ export class OverworldScene extends Phaser.Scene {
   private wasd!: Record<Direction, Phaser.Input.Keyboard.Key>;
   private interactKeys!: Phaser.Input.Keyboard.Key[];
   private interactWasDown = false;
+  private debugBattleKey!: Phaser.Input.Keyboard.Key;
 
   /** Current map key + the entry to spawn at (set by init from scene data). */
   private mapKey: string = MapKeys.TOWN;
@@ -106,6 +110,7 @@ export class OverworldScene extends Phaser.Scene {
       right: KC.D,
     }) as Record<Direction, Phaser.Input.Keyboard.Key>;
     this.interactKeys = [keyboard.addKey(KC.SPACE), keyboard.addKey(KC.ENTER)];
+    this.debugBattleKey = keyboard.addKey(KC.B); // debug: launch a test battle
   }
 
   update(time: number): void {
@@ -130,6 +135,22 @@ export class OverworldScene extends Phaser.Scene {
     for (const npc of this.npcs) npc.update(time);
 
     if (interactPressed && !this.player.isMoving && !this.encounterLock) this.tryInteract();
+
+    // Debug: launch a test battle directly (no encounter needed).
+    if (Phaser.Input.Keyboard.JustDown(this.debugBattleKey) && !this.player.isMoving && !this.encounterLock) {
+      this.launchDebugBattle();
+    }
+  }
+
+  /** Start a battle against a fake opponent with a fake party (debug key 'B'). */
+  private launchDebugBattle(): void {
+    const data: BattleData = {
+      party: [createInstance(SPECIES.rifflet, 12)],
+      opponent: createInstance(SPECIES.grooveling, 16),
+      parent: this.scene.key,
+    };
+    this.scene.pause();
+    this.scene.launch("BattleScene", data);
   }
 
   /** React to the player finishing a step: warp, then encounter checks. */
