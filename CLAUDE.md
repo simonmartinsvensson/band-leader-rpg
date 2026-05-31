@@ -80,11 +80,14 @@ Sequential scenes start the next with `this.scene.start(...)`; the overlay uses
 FireRed-style grid movement is split into two systems:
 
 - **`src/systems/MovementController.ts`** — pure, engine-agnostic input→intent state machine.
-  Given the direction held this frame + a timestamp, it emits a discrete *step intent* using
-  keyboard-auto-repeat rules: one step on the initial key-down (edge), then nothing until the
-  key is held past `REPEAT_DELAY` (200ms), after which it repeats every frame. This makes a
-  quick tap deterministically **one tile**, regardless of how long the tap lasts or how long
-  a step takes. Switching direction is a fresh edge (instant turn); release resets.
+  Given the **set of directions held** this frame + a timestamp, it emits a discrete *step
+  intent* using keyboard-auto-repeat rules: one step when the active direction changes (edge),
+  then nothing until it has been held past `REPEAT_DELAY` (200ms), after which it repeats every
+  frame. A quick tap is therefore deterministically **one tile**, regardless of tap length or
+  step duration. Conflict resolution is **last-pressed-wins** via a recency stack: the active
+  direction is the most-recently-pressed key still held, so holding Up then pressing Right
+  switches to Right immediately, and releasing Right falls back to Up with no re-press.
+  Auto-repeat state carries across direction changes, so switching while walking never stalls.
 - **`src/systems/Player.ts`** — owns grid position, facing, and the step machine. `update(intent)`
   executes at most one step per non-null intent while idle; movement is **locked** during a
   step tween (`STEP_DURATION` 150ms) so the grid can never desync. Faces the requested
@@ -93,12 +96,14 @@ FireRed-style grid movement is split into two systems:
   collision, turning in place against blocked tiles. Phaser is a **type-only** import here, so
   the class is runtime-pure and unit-testable without a browser.
 
-The scene owns input only: `OverworldScene` reads arrow keys + WASD each frame, runs them
-through `MovementController`, and passes the intent to `Player`. Touch controls come later.
+The scene owns input only: `OverworldScene` reports the set of held arrow/WASD directions each
+frame to `MovementController` (no priority — the controller resolves recency) and passes the
+intent to `Player`. Touch controls come later.
 
-Regression test: `tests/movement.test.ts` (run with `npm test`) simulates key-down/key-up
-and asserts a tap moves exactly one tile, hold-past-delay auto-repeats, and every direction
-behaves the same. Game-logic systems like these belong in `src/systems`.
+Regression test: `tests/movement.test.ts` (run with `npm test`) simulates key-down/key-up and
+asserts a tap moves exactly one tile, hold-past-delay auto-repeats, every direction behaves the
+same, and last-pressed-wins switching (hold Up + press Right, release back to Up, rapid changes
+while moving) works without stalling. Game-logic systems like these belong in `src/systems`.
 
 ## Maps
 

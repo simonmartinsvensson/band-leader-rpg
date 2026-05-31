@@ -60,7 +60,7 @@ function frame(
   held: Direction | null,
   time: number,
 ) {
-  player.update(input.update(held, time));
+  player.update(input.update(held ? [held] : [], time));
 }
 
 describe("grid movement: tap vs hold", () => {
@@ -170,24 +170,67 @@ describe("grid movement: tap vs hold", () => {
 describe("MovementController edge detection", () => {
   it("emits one intent on key-down then nothing until the repeat delay", () => {
     const input = new MovementController();
-    expect(input.update("right", 0)).toBe("right"); // edge
-    expect(input.update("right", 50)).toBeNull();
-    expect(input.update("right", REPEAT_DELAY - 1)).toBeNull();
-    expect(input.update("right", REPEAT_DELAY)).toBe("right"); // auto-repeat
-    expect(input.update("right", REPEAT_DELAY + 16)).toBe("right");
+    expect(input.update(["right"], 0)).toBe("right"); // edge
+    expect(input.update(["right"], 50)).toBeNull();
+    expect(input.update(["right"], REPEAT_DELAY - 1)).toBeNull();
+    expect(input.update(["right"], REPEAT_DELAY)).toBe("right"); // auto-repeat
+    expect(input.update(["right"], REPEAT_DELAY + 16)).toBe("right");
   });
 
   it("treats switching direction as a fresh edge (instant turn)", () => {
     const input = new MovementController();
-    expect(input.update("right", 0)).toBe("right");
-    expect(input.update("down", 16)).toBe("down"); // immediate, no delay
-    expect(input.update("down", 32)).toBeNull();
+    expect(input.update(["right"], 0)).toBe("right");
+    expect(input.update(["down"], 16)).toBe("down"); // immediate, no delay
+    expect(input.update(["down"], 32)).toBeNull();
   });
 
   it("resets on release", () => {
     const input = new MovementController();
-    expect(input.update("up", 0)).toBe("up");
-    expect(input.update(null, 16)).toBeNull();
-    expect(input.update("up", 32)).toBe("up"); // new edge after release
+    expect(input.update(["up"], 0)).toBe("up");
+    expect(input.update([], 16)).toBeNull();
+    expect(input.update(["up"], 32)).toBe("up"); // new edge after release
+  });
+});
+
+describe("MovementController last-pressed-wins", () => {
+  it("holding Up then pressing Right switches to Right immediately", () => {
+    const input = new MovementController();
+    expect(input.update(["up"], 0)).toBe("up"); // edge up
+    expect(input.update(["up"], 50)).toBeNull(); // held, within delay
+    // Press Right while Up is still held -> newest wins, instant edge step.
+    expect(input.update(["up", "right"], 60)).toBe("right");
+  });
+
+  it("releasing the newer key falls back to the still-held older key", () => {
+    const input = new MovementController();
+    input.update(["up"], 0);
+    expect(input.update(["up", "right"], 10)).toBe("right");
+    // Release Right; Up is still held -> fall back to Up with no re-press.
+    expect(input.update(["up"], 20)).toBe("up");
+  });
+
+  it("active is the most-recently-pressed held key, not a fixed priority", () => {
+    const input = new MovementController();
+    // Fixed priority (down>up>left>right) would keep picking 'down'; recency must not.
+    expect(input.update(["down"], 0)).toBe("down");
+    expect(input.update(["down", "left"], 10)).toBe("left"); // newest = left
+    expect(input.update(["down", "left", "right"], 20)).toBe("right"); // newest = right
+    expect(input.update(["down", "left"], 30)).toBe("left"); // release right -> back to left
+    expect(input.update(["down"], 40)).toBe("down"); // release left -> back to down
+  });
+
+  it("rapid direction changes while moving never stall (no coming to a stop)", () => {
+    const input = new MovementController();
+    input.update(["up"], 0); // edge up
+    input.update(["up"], REPEAT_DELAY); // now auto-repeating (walking)
+
+    // Each subsequent frame must yield a step (non-null) — the walk continues
+    // seamlessly through the direction changes.
+    expect(input.update(["up", "right"], 210)).toBe("right"); // switch
+    expect(input.update(["up", "right"], 220)).toBe("right"); // keeps walking, no re-delay
+    expect(input.update(["up", "right", "down"], 230)).toBe("down"); // switch again
+    expect(input.update(["up", "down"], 240)).toBe("down"); // release right, down still newest
+    expect(input.update(["up"], 250)).toBe("up"); // release down -> back to up
+    expect(input.update(["up"], 260)).toBe("up"); // still walking
   });
 });

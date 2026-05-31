@@ -75,7 +75,7 @@ export class OverworldScene extends Phaser.Scene {
     const interactPressed = interactDown && !this.interactWasDown;
     this.interactWasDown = interactDown;
 
-    const intent = this.moveInput.update(this.getInputDirection(), time);
+    const intent = this.moveInput.update(this.getHeldDirections(), time);
     this.player.update(intent);
     for (const npc of this.npcs) npc.update(time);
 
@@ -128,13 +128,17 @@ export class OverworldScene extends Phaser.Scene {
     this.scene.launch("DialogueScene", data);
   }
 
-  /** Resolve held keys to a single direction (fixed priority on conflict). */
-  private getInputDirection(): Direction | null {
-    if (this.cursors.down.isDown || this.wasd.down.isDown) return "down";
-    if (this.cursors.up.isDown || this.wasd.up.isDown) return "up";
-    if (this.cursors.left.isDown || this.wasd.left.isDown) return "left";
-    if (this.cursors.right.isDown || this.wasd.right.isDown) return "right";
-    return null;
+  /**
+   * All direction keys currently held (arrows + WASD). Order is irrelevant —
+   * MovementController tracks press recency and resolves last-pressed-wins.
+   */
+  private getHeldDirections(): Direction[] {
+    const held: Direction[] = [];
+    if (this.cursors.up.isDown || this.wasd.up.isDown) held.push("up");
+    if (this.cursors.down.isDown || this.wasd.down.isDown) held.push("down");
+    if (this.cursors.left.isDown || this.wasd.left.isDown) held.push("left");
+    if (this.cursors.right.isDown || this.wasd.right.isDown) held.push("right");
+    return held;
   }
 }
 
