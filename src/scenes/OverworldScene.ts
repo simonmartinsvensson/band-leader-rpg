@@ -1,12 +1,13 @@
 import Phaser from "phaser";
-import { TILE_SIZE, GAME_WIDTH, GAME_HEIGHT } from "../data/constants";
 import { Player } from "../systems/Player";
+import { GameMap } from "../systems/GameMap";
 import { MovementController } from "../systems/MovementController";
 import type { Direction } from "../types/direction";
+import sampleMap from "../data/maps/sample-map.json";
 
 /**
- * Overworld stub: a blank 16px grid you can walk around with arrow keys / WASD.
- * Map data, collision, and NPCs come later (all data-driven from src/data).
+ * Walkable overworld: loads a Tiled map, blocks the player against collision
+ * tiles, and follows the player with a camera clamped to the map bounds.
  */
 export class OverworldScene extends Phaser.Scene {
   private player!: Player;
@@ -19,10 +20,14 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.drawGrid();
+    const map = new GameMap(this, "sample-map", sampleMap);
+    const spawn = map.getSpawn("player_start");
+    this.player = new Player(this, spawn.x, spawn.y, map);
 
-    // Start roughly centered on the 15x10 tile grid.
-    this.player = new Player(this, 7, 5);
+    // Camera follows the player but never shows past the map edges.
+    const camera = this.cameras.main;
+    camera.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+    camera.startFollow(this.player.gameObject, true);
 
     const keyboard = this.input.keyboard!;
     this.cursors = keyboard.createCursorKeys();
@@ -47,16 +52,5 @@ export class OverworldScene extends Phaser.Scene {
     if (this.cursors.left.isDown || this.wasd.left.isDown) return "left";
     if (this.cursors.right.isDown || this.wasd.right.isDown) return "right";
     return null;
-  }
-
-  private drawGrid(): void {
-    const grid = this.add.graphics();
-    grid.lineStyle(1, 0x1e1e2a, 1);
-    for (let x = 0; x <= GAME_WIDTH; x += TILE_SIZE) {
-      grid.lineBetween(x, 0, x, GAME_HEIGHT);
-    }
-    for (let y = 0; y <= GAME_HEIGHT; y += TILE_SIZE) {
-      grid.lineBetween(0, y, GAME_WIDTH, y);
-    }
   }
 }

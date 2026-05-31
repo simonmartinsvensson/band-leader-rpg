@@ -1,7 +1,8 @@
 import type Phaser from "phaser";
-import { TILE_SIZE, GAME_WIDTH, GAME_HEIGHT } from "../data/constants";
+import { TILE_SIZE } from "../data/constants";
 import { AssetKeys, PlayerFrame } from "../data/assets";
 import { DIRECTION_VECTORS, type Direction } from "../types/direction";
+import type { WorldGrid } from "../types/grid";
 
 /** Time to tween one tile, in ms. Short, FireRed-ish walking pace. */
 const STEP_DURATION = 150;
@@ -31,28 +32,32 @@ const FRAME_FOR: Record<Direction, number> = {
 export class Player {
   private readonly scene: Phaser.Scene;
   private readonly sprite: Phaser.GameObjects.Sprite;
-  private readonly cols: number;
-  private readonly rows: number;
+  private readonly world: WorldGrid;
 
   private gridX: number;
   private gridY: number;
   private facing: Direction = "down";
   private moving = false;
 
-  constructor(scene: Phaser.Scene, gridX: number, gridY: number) {
+  constructor(scene: Phaser.Scene, gridX: number, gridY: number, world: WorldGrid) {
     this.scene = scene;
     this.gridX = gridX;
     this.gridY = gridY;
-    this.cols = Math.floor(GAME_WIDTH / TILE_SIZE);
-    this.rows = Math.floor(GAME_HEIGHT / TILE_SIZE);
+    this.world = world;
 
     this.sprite = scene.add
       .sprite(this.pixelAt(gridX), this.pixelAt(gridY), AssetKeys.PLAYER, FRAME_FOR.down)
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(10);
   }
 
   get isMoving(): boolean {
     return this.moving;
+  }
+
+  /** The underlying sprite, e.g. for the camera to follow. */
+  get gameObject(): Phaser.GameObjects.Sprite {
+    return this.sprite;
   }
 
   /** The direction the player is currently facing. */
@@ -84,7 +89,7 @@ export class Player {
     const { x: dx, y: dy } = DIRECTION_VECTORS[intent];
     const targetX = this.gridX + dx;
     const targetY = this.gridY + dy;
-    if (this.inBounds(targetX, targetY)) {
+    if (this.canEnter(targetX, targetY)) {
       this.step(targetX, targetY);
     }
   }
@@ -112,8 +117,8 @@ export class Player {
     });
   }
 
-  private inBounds(x: number, y: number): boolean {
-    return x >= 0 && y >= 0 && x < this.cols && y < this.rows;
+  private canEnter(x: number, y: number): boolean {
+    return x >= 0 && y >= 0 && x < this.world.cols && y < this.world.rows && !this.world.isBlocked(x, y);
   }
 
   /** Center pixel of a tile index, for either axis (tiles are square). */

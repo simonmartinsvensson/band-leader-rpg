@@ -21,4 +21,8 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [BootScene, PreloadScene, OverworldScene],
 };
 
-new Phaser.Game(config);
+const game = new Phaser.Game(config);
+
+// Debug/test hook: lets the headless smoke test (scripts/smoke.mjs) inspect
+// scene + player state. Harmless in production.
+(globalThis as Record<string, unknown>).__GAME__ = game;

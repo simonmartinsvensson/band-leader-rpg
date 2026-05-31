@@ -2,6 +2,12 @@ import { describe, it, expect } from "vitest";
 import { Player } from "../src/systems/Player";
 import { MovementController, REPEAT_DELAY } from "../src/systems/MovementController";
 import type { Direction } from "../src/types/direction";
+import type { WorldGrid } from "../src/types/grid";
+
+/** An open field with no blocked tiles. */
+function openWorld(): WorldGrid {
+  return { cols: 15, rows: 10, isBlocked: () => false };
+}
 
 // A minimal stand-in for the bits of Phaser.Scene that Player touches. Tweens
 // don't run on a clock here — the test completes them explicitly to model a
@@ -12,6 +18,9 @@ function makeFakeScene() {
     y: 0,
     texture: { frameTotal: 5 }, // 4 directional frames + base => use directional frames
     setOrigin() {
+      return sprite;
+    },
+    setDepth() {
       return sprite;
     },
     setFrame() {
@@ -57,7 +66,7 @@ function frame(
 describe("grid movement: tap vs hold", () => {
   it("a single tap moves exactly one tile, even when the tap outlasts a step", () => {
     const { scene, tweens, completeLastStep } = makeFakeScene();
-    const player = new Player(scene, 7, 5);
+    const player = new Player(scene, 7, 5, openWorld());
     const input = new MovementController();
 
     // Key down -> exactly one step begins.
@@ -85,7 +94,7 @@ describe("grid movement: tap vs hold", () => {
 
   it("holding past the repeat delay steps again (auto-repeat)", () => {
     const { scene, tweens, completeLastStep } = makeFakeScene();
-    const player = new Player(scene, 7, 5);
+    const player = new Player(scene, 7, 5, openWorld());
     const input = new MovementController();
 
     frame(player, input, "right", 0); // step 1 on key-down
@@ -105,7 +114,7 @@ describe("grid movement: tap vs hold", () => {
 
   it("a second discrete tap after release moves exactly one more tile", () => {
     const { scene, tweens, completeLastStep } = makeFakeScene();
-    const player = new Player(scene, 7, 5);
+    const player = new Player(scene, 7, 5, openWorld());
     const input = new MovementController();
 
     frame(player, input, "down", 0);
@@ -118,6 +127,24 @@ describe("grid movement: tap vs hold", () => {
     expect(player.tileY).toBe(7); // 5 -> 6 -> 7, exactly two single steps
   });
 
+  it("does not step onto a blocked tile (collision respects the grid)", () => {
+    const { scene, tweens } = makeFakeScene();
+    // Block the tile directly to the right of the player at (7,5).
+    const world: WorldGrid = {
+      cols: 15,
+      rows: 10,
+      isBlocked: (x, y) => x === 8 && y === 5,
+    };
+    const player = new Player(scene, 7, 5, world);
+    const input = new MovementController();
+
+    frame(player, input, "right", 0);
+    expect(tweens.length).toBe(0); // no step started
+    expect(player.isMoving).toBe(false);
+    expect(player.tileX).toBe(7); // stayed put
+    expect(player.direction).toBe("right"); // but still turned to face the wall
+  });
+
   it("works the same in every direction", () => {
     for (const [dir, axis, delta] of [
       ["up", "tileY", -1],
@@ -126,7 +153,7 @@ describe("grid movement: tap vs hold", () => {
       ["right", "tileX", 1],
     ] as const) {
       const { scene, completeLastStep } = makeFakeScene();
-      const player = new Player(scene, 7, 5);
+      const player = new Player(scene, 7, 5, openWorld());
       const input = new MovementController();
       const start = player[axis];
 
