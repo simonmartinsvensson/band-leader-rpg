@@ -11,6 +11,7 @@
     "gen:map": "node scripts/gen-map.mjs",
     "gen:font": "node scripts/gen-font.mjs",
     "test": "vitest run",
+    "check:data": "vitest run tests/datamodel.test.ts --disable-console-intercept",
     "smoke": "node scripts/smoke.mjs"
   },
   "devDependencies": {
