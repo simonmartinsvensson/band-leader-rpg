@@ -2,11 +2,23 @@
 // this table (see CLAUDE.md, Maps). Each dialogue is one or more pages of text;
 // the DialogueScene shows them one page at a time with a typewriter effect.
 
+/** A one-time (or repeatable) gift an NPC grants when talked to. */
+export interface DialogueGift {
+  items?: Array<{ id: string; qty: number }>;
+  currency?: number;
+  /** If set, the gift is granted only once (tracked by this flag id). */
+  once?: string;
+}
+
 export interface Dialogue {
   /** Optional speaker name shown in the box header. */
   speaker?: string;
   /** One entry per page of text. */
   pages: string[];
+  /** Items / currency this NPC gives when talked to. */
+  gift?: DialogueGift;
+  /** If set, talking opens a shop selling these item ids. */
+  shop?: string[];
 }
 
 export const DIALOGUES: Record<string, Dialogue> = {
@@ -24,6 +36,26 @@ export const DIALOGUES: Record<string, Dialogue> = {
       "Spare a chord? Heh. I just busk out here for the open air and the spare change.",
       "Word is a producer's been scouting newcomers. Could be your big break, kid.",
     ],
+  },
+  roadie: {
+    speaker: "Roadie",
+    pages: [
+      "New band on the scene? Here, take some supplies.",
+      "Got you a couple Snacks, an Energy Drink, and some cash. Go make some noise!",
+    ],
+    gift: {
+      items: [
+        { id: "snack", qty: 2 },
+        { id: "energy_drink", qty: 1 },
+      ],
+      currency: 200,
+      once: "roadie_gift",
+    },
+  },
+  shopkeeper: {
+    speaker: "Shopkeeper",
+    pages: ["Welcome to the Gear Shop!"],
+    shop: ["snack", "energy_drink", "demo_tape", "hype_track"],
   },
 };
 

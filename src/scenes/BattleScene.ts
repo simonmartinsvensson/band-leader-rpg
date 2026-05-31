@@ -17,6 +17,7 @@ import { firstAliveIndex, healParty } from "../systems/party";
 import { makeBattler } from "../systems/battle";
 import { auditionAttempt } from "../systems/recruit";
 import { recruit } from "../systems/roster";
+import { restoreStamina } from "../systems/inventory";
 import { getSpecies } from "../data/species";
 import { ITEMS, getItem } from "../data/items";
 import type { MusicianInstance } from "../types/musician";
@@ -378,7 +379,7 @@ export class BattleScene extends Phaser.Scene {
 
   private enterBag(): void {
     const bag = this.bag();
-    this.bagItems = Object.keys(bag).filter((id) => bag[id] > 0 && getItem(id));
+    this.bagItems = Object.keys(bag).filter((id) => bag[id] > 0 && getItem(id)?.usableInBattle);
     if (this.bagItems.length === 0) {
       this.runMessages(["Your bag is empty!"], () => this.enterCommand());
       return;
@@ -411,9 +412,43 @@ export class BattleScene extends Phaser.Scene {
     if (this.pressed("up") && this.techIndex > 0) this.techIndex--;
     else if (this.pressed("down") && this.techIndex + 1 < count) this.techIndex++;
     this.moveTechCursor();
-    if (this.pressed("confirm")) {
-      const id = this.bagItems[this.techIndex];
-      this.tryRecruit(getItem(id)?.recruitModifier ?? 1, id);
+    if (this.pressed("confirm")) this.useBattleItem(this.bagItems[this.techIndex]);
+  }
+
+  /** Apply an item in battle by its effect; all uses cost the player's turn. */
+  private useBattleItem(id: string): void {
+    const item = getItem(id);
+    if (!item) return;
+    switch (item.effect.kind) {
+      case "recruit":
+        this.tryRecruit(item.effect.modifier, id);
+        return;
+      case "restoreStamina": {
+        this.hideMenus();
+        this.phase = "busy";
+        this.consumeItem(id);
+        const inst = this.battle.player.instance;
+        const healed = restoreStamina(inst, item.effect.amount);
+        this.setHp("player", inst.currentStamina, inst.stats.stamina);
+        this.playSteps(
+          [{ text: `You use the ${item.name}!` }, { text: `${inst.nickname} recovered ${healed} stamina!` }],
+          () => this.opponentCounter(),
+        );
+        return;
+      }
+      case "boostStat": {
+        this.hideMenus();
+        this.phase = "busy";
+        this.consumeItem(id);
+        const b = this.battle.player;
+        const stat = item.effect.stat;
+        b.stages[stat] = Math.max(-6, Math.min(6, b.stages[stat] + item.effect.stages));
+        this.playSteps(
+          [{ text: `You use the ${item.name}!` }, { text: `${b.instance.nickname}'s ${stat} rose!` }],
+          () => this.opponentCounter(),
+        );
+        return;
+      }
     }
   }
 

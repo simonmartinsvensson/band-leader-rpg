@@ -136,6 +136,22 @@ mkdirSync(OUT_DIR, { recursive: true });
       ty: 9,
       props: { dialogue: "busker", facing: "left", wander: true, tint: "#7cc4ff" },
     }),
+    // Roadie (just left of spawn): gifts starter items + cash.
+    obj({
+      name: "roadie",
+      type: "npc",
+      tx: 2,
+      ty: 3,
+      props: { dialogue: "roadie", facing: "right", wander: false, tint: "#f1c40f" },
+    }),
+    // Shopkeeper (a few tiles right of spawn): opens the gear shop.
+    obj({
+      name: "shopkeeper",
+      type: "npc",
+      tx: 6,
+      ty: 3,
+      props: { dialogue: "shopkeeper", facing: "down", wander: false, tint: "#4caf50" },
+    }),
     // Warp south to the busking street; arrive back here from the street.
     obj({ name: "to_street", type: "warp", tx: 3, ty: 8, props: { target: "street", entry: "from_town" } }),
     obj({ name: "from_street", type: "entry", tx: 3, ty: 7 }),

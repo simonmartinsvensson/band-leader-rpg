@@ -14,8 +14,12 @@ import { MAPS, MapKeys } from "../data/maps";
 import { createInstance } from "../systems/stats";
 import { SPECIES, getSpecies } from "../data/species";
 import { createStarterParty, healParty } from "../systems/party";
+import { addItem, type Bag } from "../systems/inventory";
+import type { DialogueGift } from "../data/dialogues";
 import type { BattleData } from "./BattleScene";
 import type { PartyData } from "./PartyScene";
+import type { BagData } from "./BagScene";
+import type { ShopData } from "./ShopScene";
 import type { MusicianInstance } from "../types/musician";
 
 /** A warp target: which map to load and which entry point to place the player at. */
@@ -47,6 +51,7 @@ export class OverworldScene extends Phaser.Scene {
   private interactWasDown = false;
   private debugBattleKey!: Phaser.Input.Keyboard.Key;
   private partyKey!: Phaser.Input.Keyboard.Key;
+  private bagKey!: Phaser.Input.Keyboard.Key;
 
   /** Current map key + the entry to spawn at (set by init from scene data). */
   private mapKey: string = MapKeys.TOWN;
@@ -81,6 +86,8 @@ export class OverworldScene extends Phaser.Scene {
     if (!this.registry.has("party")) this.registry.set("party", createStarterParty());
     if (!this.registry.has("roster")) this.registry.set("roster", []);
     if (!this.registry.has("bag")) this.registry.set("bag", { demo_tape: 3 });
+    if (!this.registry.has("currency")) this.registry.set("currency", 300);
+    if (!this.registry.has("flags")) this.registry.set("flags", {});
 
     const map = new GameMap(this, this.mapKey, MAPS[this.mapKey]);
 
@@ -121,6 +128,7 @@ export class OverworldScene extends Phaser.Scene {
     this.interactKeys = [keyboard.addKey(KC.SPACE), keyboard.addKey(KC.ENTER)];
     this.debugBattleKey = keyboard.addKey(KC.B); // debug: launch a test battle
     this.partyKey = keyboard.addKey(KC.P); // open the party menu
+    this.bagKey = keyboard.addKey(KC.I); // open the bag (inventory)
   }
 
   update(time: number): void {
@@ -158,8 +166,12 @@ export class OverworldScene extends Phaser.Scene {
     // Open the party menu.
     if (Phaser.Input.Keyboard.JustDown(this.partyKey)) {
       this.scene.pause();
-      const data: PartyData = { parent: this.scene.key };
-      this.scene.launch("PartyScene", data);
+      this.scene.launch("PartyScene", { parent: this.scene.key } satisfies PartyData);
+    }
+    // Open the bag.
+    if (Phaser.Input.Keyboard.JustDown(this.bagKey)) {
+      this.scene.pause();
+      this.scene.launch("BagScene", { parent: this.scene.key } satisfies BagData);
     }
   }
 
@@ -286,7 +298,31 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     npc.faceTo(OPPOSITE[facing]); // turn to face the player
+
+    // Shop NPC: open the shop instead of plain dialogue.
+    if (dialogue.shop) {
+      this.scene.pause();
+      this.scene.launch("ShopScene", {
+        parent: this.scene.key,
+        wares: dialogue.shop,
+      } satisfies ShopData);
+      return;
+    }
+
+    // Gift NPC: grant items/currency (once, if flagged) before the dialogue.
+    if (dialogue.gift) this.applyGift(dialogue.gift);
     this.openDialogue(dialogue.pages, dialogue.speaker);
+  }
+
+  /** Grant a dialogue's gift into the registry bag/currency (respecting `once`). */
+  private applyGift(gift: DialogueGift): void {
+    const flags = this.registry.get("flags") as Record<string, boolean>;
+    if (gift.once && flags[gift.once]) return;
+    const bag = this.registry.get("bag") as Bag;
+    for (const { id, qty } of gift.items ?? []) addItem(bag, id, qty);
+    if (gift.currency) this.registry.set("currency", (this.registry.get("currency") ?? 0) + gift.currency);
+    if (gift.once) flags[gift.once] = true;
+    console.log("granted gift");
   }
 
   private openDialogue(pages: string[], speaker?: string): void {
