@@ -8,6 +8,7 @@ import { BattleScene } from "./scenes/BattleScene";
 import { PartyScene } from "./scenes/PartyScene";
 import { BagScene } from "./scenes/BagScene";
 import { ShopScene } from "./scenes/ShopScene";
+import { CareerScene } from "./scenes/CareerScene";
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -35,6 +36,7 @@ const config: Phaser.Types.Core.GameConfig = {
     PartyScene,
     BagScene,
     ShopScene,
+    CareerScene,
   ],
 };
 

@@ -57,6 +57,10 @@ export const DIALOGUES: Record<string, Dialogue> = {
     pages: ["Welcome to the Gear Shop!"],
     shop: ["snack", "energy_drink", "demo_tape", "hype_track"],
   },
+  vip_host: {
+    speaker: "VIP Host",
+    pages: ["You made it backstage!", "Word of your residency is spreading fast."],
+  },
 };
 
 export function getDialogue(id: string): Dialogue | undefined {

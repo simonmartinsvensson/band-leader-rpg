@@ -15,17 +15,34 @@ import { createInstance } from "../systems/stats";
 import { SPECIES, getSpecies } from "../data/species";
 import { createStarterParty, healParty } from "../systems/party";
 import { addItem, type Bag } from "../systems/inventory";
+import { buildTrainerTeam, isTrainerDefeated, hasResidency, lineOfSight } from "../systems/career";
+import { getTrainer } from "../data/trainers";
+import { getResidency } from "../data/residencies";
 import type { DialogueGift } from "../data/dialogues";
 import type { BattleData } from "./BattleScene";
 import type { PartyData } from "./PartyScene";
 import type { BagData } from "./BagScene";
 import type { ShopData } from "./ShopScene";
+import type { CareerData } from "./CareerScene";
 import type { MusicianInstance } from "../types/musician";
 
 /** A warp target: which map to load and which entry point to place the player at. */
 interface Warp {
   target: string;
   entry: string;
+}
+
+/** A residency-gated warp (a bouncer). */
+interface Gate extends Warp {
+  requires: string;
+}
+
+/** A placed trainer: its NPC sprite + battle data. */
+interface PlacedTrainer {
+  npc: NPC;
+  trainerId: string;
+  facing: Direction;
+  sightRange: number;
 }
 
 /** Scene data passed when (re)starting the overworld, e.g. after a warp. */
@@ -52,6 +69,7 @@ export class OverworldScene extends Phaser.Scene {
   private debugBattleKey!: Phaser.Input.Keyboard.Key;
   private partyKey!: Phaser.Input.Keyboard.Key;
   private bagKey!: Phaser.Input.Keyboard.Key;
+  private careerKey!: Phaser.Input.Keyboard.Key;
 
   /** Current map key + the entry to spawn at (set by init from scene data). */
   private mapKey: string = MapKeys.TOWN;
@@ -60,8 +78,12 @@ export class OverworldScene extends Phaser.Scene {
   private readonly warps = new Map<string, Warp>(); // "x,y" -> warp
   private readonly encounterTiles = new Map<string, string>(); // "x,y" -> zone id
   private readonly healTiles = new Set<string>(); // "x,y" -> studio heal point
+  private readonly gateTiles = new Map<string, Gate>(); // "x,y" -> residency gate
+  private trainers: PlacedTrainer[] = [];
+  private mapBlocked: (x: number, y: number) => boolean = () => false;
   private pendingWarp: Warp | null = null;
-  private pendingBattle: MusicianInstance | null = null;
+  private pendingBattle: BattleData | null = null;
+  private pendingTrainer: string | null = null;
 
   constructor() {
     super("OverworldScene");
@@ -74,11 +96,14 @@ export class OverworldScene extends Phaser.Scene {
 
   create(): void {
     this.npcs = [];
+    this.trainers = [];
     this.warps.clear();
     this.encounterTiles.clear();
     this.healTiles.clear();
+    this.gateTiles.clear();
     this.pendingWarp = null;
     this.pendingBattle = null;
+    this.pendingTrainer = null;
     this.interactWasDown = false;
     this.moveInput = new MovementController();
 
@@ -88,24 +113,28 @@ export class OverworldScene extends Phaser.Scene {
     if (!this.registry.has("bag")) this.registry.set("bag", { demo_tape: 3 });
     if (!this.registry.has("currency")) this.registry.set("currency", 300);
     if (!this.registry.has("flags")) this.registry.set("flags", {});
+    if (!this.registry.has("trainersDefeated")) this.registry.set("trainersDefeated", {});
+    if (!this.registry.has("residencies")) this.registry.set("residencies", []);
 
     const map = new GameMap(this, this.mapKey, MAPS[this.mapKey]);
+    this.mapBlocked = (x, y) => map.isBlocked(x, y);
 
     // A tile is walkable if the map allows it and no actor stands there.
     const playerAt = (x: number, y: number) =>
       this.player !== undefined && this.player.tileX === x && this.player.tileY === y;
-    const npcAt = (x: number, y: number) => this.npcs.some((n) => n.occupies(x, y));
-    const isWalkable = (x: number, y: number) =>
-      !map.isBlocked(x, y) && !playerAt(x, y) && !npcAt(x, y);
+    const actorAt = (x: number, y: number) =>
+      this.npcs.some((n) => n.occupies(x, y)) || this.trainers.some((t) => t.npc.occupies(x, y));
+    const isWalkable = (x: number, y: number) => !map.isBlocked(x, y) && !playerAt(x, y) && !actorAt(x, y);
 
     this.buildObjects(map, isWalkable);
 
-    // The player's world: map collision, any NPC tile, and heal points (so the
-    // player faces them to interact rather than walking onto them).
+    // The player's world: map collision, actors, heal points, and gates (face to
+    // interact rather than walking onto them).
     const world: WorldGrid = {
       cols: map.cols,
       rows: map.rows,
-      isBlocked: (x, y) => map.isBlocked(x, y) || npcAt(x, y) || this.healTiles.has(key(x, y)),
+      isBlocked: (x, y) =>
+        map.isBlocked(x, y) || actorAt(x, y) || this.healTiles.has(key(x, y)) || this.gateTiles.has(key(x, y)),
     };
 
     const spawn = map.getSpawn(this.entryName);
@@ -129,6 +158,7 @@ export class OverworldScene extends Phaser.Scene {
     this.debugBattleKey = keyboard.addKey(KC.B); // debug: launch a test battle
     this.partyKey = keyboard.addKey(KC.P); // open the party menu
     this.bagKey = keyboard.addKey(KC.I); // open the bag (inventory)
+    this.careerKey = keyboard.addKey(KC.C); // open the career menu
   }
 
   update(time: number): void {
@@ -139,11 +169,19 @@ export class OverworldScene extends Phaser.Scene {
       this.scene.restart({ map: warp.target, entry: warp.entry });
       return;
     }
-    // An encounter queued by the previous step: start the battle.
+    // A battle queued by the previous step (wild encounter, or trainer after
+    // its intro dialogue): start it.
     if (this.pendingBattle) {
-      const opponent = this.pendingBattle;
+      const data = this.pendingBattle;
       this.pendingBattle = null;
-      this.startBattle(opponent);
+      this.startBattle(data);
+      return;
+    }
+    // A trainer triggered (sight or interaction): show intro, then battle.
+    if (this.pendingTrainer) {
+      const id = this.pendingTrainer;
+      this.pendingTrainer = null;
+      this.startTrainerEncounter(id);
       return;
     }
 
@@ -173,36 +211,82 @@ export class OverworldScene extends Phaser.Scene {
       this.scene.pause();
       this.scene.launch("BagScene", { parent: this.scene.key } satisfies BagData);
     }
+    // Open the career menu.
+    if (Phaser.Input.Keyboard.JustDown(this.careerKey)) {
+      this.scene.pause();
+      this.scene.launch("CareerScene", { parent: this.scene.key } satisfies CareerData);
+    }
   }
 
   private party(): MusicianInstance[] {
     return this.registry.get("party") as MusicianInstance[];
   }
 
-  /** Pause the overworld and launch a battle against the given opponent. */
-  private startBattle(opponent: MusicianInstance): void {
-    const data: BattleData = { party: this.party(), opponent, parent: this.scene.key };
+  /** Pause the overworld and launch a battle with the given data. */
+  private startBattle(data: BattleData): void {
     this.scene.pause();
     this.scene.launch("BattleScene", data);
   }
 
-  /** Debug: battle a weak wild opponent directly (debug key 'B'). */
-  private launchDebugBattle(): void {
-    this.startBattle(createInstance(SPECIES.grooveling, 3));
+  /** Show a trainer's intro dialogue, then start the trainer battle. */
+  private startTrainerEncounter(trainerId: string): void {
+    const trainer = getTrainer(trainerId);
+    if (!trainer) return;
+    this.pendingBattle = {
+      party: this.party(),
+      opponents: buildTrainerTeam(trainer),
+      parent: this.scene.key,
+      trainer: {
+        id: trainer.id,
+        name: trainer.name,
+        reward: trainer.reward,
+        residency: trainer.residency,
+        defeatLine: trainer.defeatLine,
+      },
+    };
+    this.openDialogue(trainer.intro, trainer.name); // on close -> update() starts pendingBattle
   }
 
-  /** React to the player finishing a step: warp, then encounter checks. */
+  /** Debug: battle a weak wild opponent directly (debug key 'B'). */
+  private launchDebugBattle(): void {
+    this.startBattle({
+      party: this.party(),
+      opponents: [createInstance(SPECIES.grooveling, 3)],
+      parent: this.scene.key,
+    });
+  }
+
+  /** React to the player finishing a step: warp, trainer sight, then encounter. */
   private handleStepComplete(x: number, y: number): void {
     const warp = this.warps.get(key(x, y));
     if (warp) {
       this.pendingWarp = warp; // applied in update() to avoid restarting mid-tween
       return;
     }
+    const seenBy = this.trainerSeeing(x, y);
+    if (seenBy) {
+      this.pendingTrainer = seenBy;
+      return;
+    }
     const zoneId = this.encounterTiles.get(key(x, y));
     if (zoneId) {
       const opponent = this.rollEncounterOpponent(zoneId);
-      if (opponent) this.pendingBattle = opponent; // started in update() (not mid-tween)
+      if (opponent) {
+        this.pendingBattle = { party: this.party(), opponents: [opponent], parent: this.scene.key };
+      }
     }
+  }
+
+  /** Id of an undefeated trainer whose line of sight contains (px,py), or null. */
+  private trainerSeeing(px: number, py: number): string | null {
+    const defeated = this.registry.get("trainersDefeated") as Record<string, boolean>;
+    for (const t of this.trainers) {
+      if (isTrainerDefeated(defeated, t.trainerId)) continue;
+      if (lineOfSight(t.npc.tileX, t.npc.tileY, t.facing, t.sightRange, px, py, this.mapBlocked)) {
+        return t.trainerId;
+      }
+    }
+    return null;
   }
 
   /** Roll a zone encounter and, on a hit, build a wild opponent instance. */
@@ -266,6 +350,29 @@ export class OverworldScene extends Phaser.Scene {
         const py = obj.tileY * TILE_SIZE;
         overlay.fillStyle(0x4caf50, 0.4).fillRect(px, py, TILE_SIZE, TILE_SIZE);
         overlay.fillStyle(0xffffff, 0.95).fillRect(px + 7, py + 3, 2, 10).fillRect(px + 3, py + 7, 10, 2);
+      } else if (obj.type === "trainer") {
+        const trainerId = String(obj.props.trainer ?? "");
+        const facing = (obj.props.facing as Direction) ?? "down";
+        this.trainers.push({
+          npc: new NPC(
+            this,
+            { id: trainerId, tileX: obj.tileX, tileY: obj.tileY, facing, wander: false, tint: parseTint(obj.props.tint) },
+            isWalkable,
+          ),
+          trainerId,
+          facing,
+          sightRange: getTrainer(trainerId)?.sightRange ?? 0,
+        });
+      } else if (obj.type === "gate") {
+        this.gateTiles.set(key(obj.tileX, obj.tileY), {
+          requires: String(obj.props.requires ?? ""),
+          target: String(obj.props.target ?? ""),
+          entry: String(obj.props.entry ?? ""),
+        });
+        // Purple "velvet rope" marker.
+        overlay
+          .fillStyle(0x8e44ad, 0.5)
+          .fillRect(obj.tileX * TILE_SIZE, obj.tileY * TILE_SIZE, TILE_SIZE, TILE_SIZE);
       }
     }
   }
@@ -285,6 +392,31 @@ export class OverworldScene extends Phaser.Scene {
         ["The band takes five and tunes up.", "Everyone's stamina is fully restored!"],
         "Rehearsal Studio",
       );
+      return;
+    }
+
+    // Residency-gated warp (a bouncer).
+    const gate = this.gateTiles.get(key(targetX, targetY));
+    if (gate) {
+      if (hasResidency(this.registry.get("residencies"), gate.requires)) {
+        this.pendingWarp = { target: gate.target, entry: gate.entry };
+      } else {
+        const name = getResidency(gate.requires)?.name ?? "right residency";
+        this.openDialogue(["A bouncer blocks the way.", `"${name} holders only."`], "Bouncer");
+      }
+      return;
+    }
+
+    // Trainer (rival / venue boss): battle if not yet beaten.
+    const placed = this.trainers.find((t) => t.npc.occupies(targetX, targetY));
+    if (placed) {
+      placed.npc.faceTo(OPPOSITE[facing]);
+      const trainer = getTrainer(placed.trainerId);
+      if (isTrainerDefeated(this.registry.get("trainersDefeated"), placed.trainerId)) {
+        if (trainer) this.openDialogue(trainer.postLine, trainer.name);
+      } else {
+        this.pendingTrainer = placed.trainerId;
+      }
       return;
     }
 

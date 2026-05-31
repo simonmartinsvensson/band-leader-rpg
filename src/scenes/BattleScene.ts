@@ -18,15 +18,29 @@ import { makeBattler } from "../systems/battle";
 import { auditionAttempt } from "../systems/recruit";
 import { recruit } from "../systems/roster";
 import { restoreStamina } from "../systems/inventory";
+import { addResidency, markTrainerDefeated } from "../systems/career";
 import { getSpecies } from "../data/species";
+import { getResidency } from "../data/residencies";
 import { ITEMS, getItem } from "../data/items";
 import type { MusicianInstance } from "../types/musician";
 
 /** Scene data: the player's party + opponent + the scene to resume on exit. */
+/** Trainer descriptor for a trainer battle (omitted for wild battles). */
+export interface BattleTrainer {
+  id: string;
+  name: string;
+  reward: number;
+  residency?: string;
+  defeatLine: string[];
+}
+
 export interface BattleData {
   party: MusicianInstance[];
-  opponent: MusicianInstance;
+  /** Opponent team — one for a wild battle, several for a trainer. */
+  opponents: MusicianInstance[];
   parent: string;
+  /** Present for trainer battles (no recruiting/running; reward + residency). */
+  trainer?: BattleTrainer;
 }
 
 type Phase = "intro" | "command" | "technique" | "switch" | "bag" | "busy" | "over";
@@ -68,6 +82,10 @@ export class BattleScene extends Phaser.Scene {
   private activeIndex = 0;
   private participants = new Set<MusicianInstance>();
 
+  private opponents: MusicianInstance[] = [];
+  private opponentIndex = 0;
+  private trainer?: BattleTrainer;
+
   private message!: Phaser.GameObjects.BitmapText;
   private prompt!: Phaser.GameObjects.BitmapText;
   private commandTexts: Phaser.GameObjects.BitmapText[] = [];
@@ -82,6 +100,7 @@ export class BattleScene extends Phaser.Scene {
   private hpBars!: Record<Side, Phaser.GameObjects.Graphics>;
   private hpText!: Phaser.GameObjects.BitmapText;
   private playerName!: Phaser.GameObjects.BitmapText;
+  private opponentName!: Phaser.GameObjects.BitmapText;
   private sprites!: Record<Side, Phaser.GameObjects.Sprite>;
 
   private keys!: {
@@ -99,8 +118,11 @@ export class BattleScene extends Phaser.Scene {
 
   init(data: BattleData): void {
     this.party = data.party;
+    this.opponents = data.opponents;
+    this.opponentIndex = 0;
+    this.trainer = data.trainer;
     this.activeIndex = Math.max(0, firstAliveIndex(data.party));
-    this.battle = createBattleState(this.party[this.activeIndex], data.opponent);
+    this.battle = createBattleState(this.party[this.activeIndex], this.opponents[0]);
     this.participants = new Set([this.party[this.activeIndex]]);
     this.parent = data.parent ?? "OverworldScene";
     this.phase = "intro";
@@ -120,13 +142,11 @@ export class BattleScene extends Phaser.Scene {
     const opp = this.battle.opponent.instance;
     const me = this.battle.player.instance;
     this.phase = "busy";
-    this.playSteps(
-      [
-        { text: `A wild ${opp.nickname} (Lv ${opp.level}) appeared!` },
-        { text: `Go, ${me.nickname}!` },
-      ],
-      () => this.enterCommand(),
-    );
+    const intro: Step[] = this.trainer
+      ? [{ text: `${this.trainer.name} wants to battle!` }, { text: `${this.trainer.name} sent out ${opp.nickname}!` }]
+      : [{ text: `A wild ${opp.nickname} (Lv ${opp.level}) appeared!` }];
+    intro.push({ text: `Go, ${me.nickname}!` });
+    this.playSteps(intro, () => this.enterCommand());
   }
 
   update(): void {
@@ -160,7 +180,7 @@ export class BattleScene extends Phaser.Scene {
 
     // Info boxes (name + Lv) — opponent top-left, player bottom-right.
     this.add.graphics().fillStyle(0x10101c, 0.85).fillRect(6, 8, 96, 22).lineStyle(1, 0xffffff, 0.8).strokeRect(6, 8, 96, 22);
-    createText(this, 10, 11, `${opp.instance.nickname}  Lv${opp.instance.level}`);
+    this.opponentName = createText(this, 10, 11, `${opp.instance.nickname}  Lv${opp.instance.level}`);
 
     this.add
       .graphics()
@@ -265,13 +285,15 @@ export class BattleScene extends Phaser.Scene {
         this.enterTechnique();
         break;
       case "Recruit":
-        this.tryRecruit(1); // plain audition
+        if (this.trainer) this.runMessages(["You can't recruit a rival's musician!"], () => this.enterCommand());
+        else this.tryRecruit(1); // plain audition
         break;
       case "Bag":
         this.enterBag();
         break;
       case "Run":
-        this.doRun();
+        if (this.trainer) this.runMessages(["There's no bailing on a showcase!"], () => this.enterCommand());
+        else this.doRun();
         break;
     }
   }
@@ -511,7 +533,7 @@ export class BattleScene extends Phaser.Scene {
           this.enterCommand();
           break;
         case "player_won":
-          this.handleVictory();
+          this.handleOpponentDefeated();
           break;
         case "player_lost":
           this.handleActiveFaint();
@@ -522,8 +544,8 @@ export class BattleScene extends Phaser.Scene {
     });
   }
 
-  /** Opponent fainted: award XP to participants, announce level-ups, then exit. */
-  private handleVictory(): void {
+  /** Current opponent fainted: award XP, then send the next one or finish. */
+  private handleOpponentDefeated(): void {
     const reward = xpReward(this.battle.opponent.instance);
     const messages: string[] = [];
     for (const inst of this.participants) {
@@ -537,7 +559,45 @@ export class BattleScene extends Phaser.Scene {
     }
     this.refreshHp("player"); // max stamina may have grown
     this.playerName.setText(`${this.battle.player.instance.nickname}  Lv${this.battle.player.instance.level}`);
-    console.log(`battle outcome: player_won (xp ${reward})`);
+
+    if (this.opponentIndex + 1 < this.opponents.length) {
+      this.runMessages(messages, () => this.sendNextOpponent());
+    } else if (this.trainer) {
+      this.runMessages(messages, () => this.finishTrainerVictory());
+    } else {
+      console.log(`battle outcome: player_won (xp ${reward})`);
+      this.runMessages(messages, () => this.endBattle());
+    }
+  }
+
+  /** Trainer sends out their next musician. */
+  private sendNextOpponent(): void {
+    this.opponentIndex++;
+    const next = this.opponents[this.opponentIndex];
+    this.battle.opponent = makeBattler(next);
+    this.battle.outcome = "ongoing";
+    this.sprites.opponent.setAlpha(1).setTint(genreColor(this.battle.opponent.genres[0]));
+    this.opponentName.setText(`${next.nickname}  Lv${next.level}`);
+    this.refreshHp("opponent");
+    this.runMessages([`${this.trainer?.name ?? "Wild"} sent out ${next.nickname}!`], () => this.enterCommand());
+  }
+
+  /** Whole trainer team defeated: pay out, record, grant residency, exit. */
+  private finishTrainerVictory(): void {
+    const trainer = this.trainer!;
+    const messages = [`You defeated ${trainer.name}!`, ...trainer.defeatLine];
+
+    this.registry.set("currency", (this.registry.get("currency") ?? 0) + trainer.reward);
+    messages.push(`You got $${trainer.reward}!`);
+    markTrainerDefeated(this.registry.get("trainersDefeated") ?? {}, trainer.id);
+
+    if (trainer.residency) {
+      addResidency(this.registry.get("residencies") ?? [], trainer.residency);
+      const name = getResidency(trainer.residency)?.name ?? "residency";
+      messages.push(`You earned the ${name}!`);
+    }
+
+    console.log(`battle outcome: trainer_defeated ${trainer.id}${trainer.residency ? ` residency:${trainer.residency}` : ""}`);
     this.runMessages(messages, () => this.endBattle());
   }
 

@@ -158,6 +158,17 @@ mkdirSync(OUT_DIR, { recursive: true });
     // Warp east to the rehearsal studio; arrive back here from the studio.
     obj({ name: "to_studio", type: "warp", tx: 10, ty: 1, props: { target: "studio", entry: "studio_entry" } }),
     obj({ name: "from_studio", type: "entry", tx: 10, ty: 2 }),
+    // Rival band leader: battles on sight or interaction.
+    obj({
+      name: "rival_max",
+      type: "trainer",
+      tx: 5,
+      ty: 5,
+      props: { trainer: "rival_max", facing: "down", tint: "#e74c3c" },
+    }),
+    // Warp to the jazz venue (The Blue Note); arrive back here from it.
+    obj({ name: "to_jazz", type: "warp", tx: 1, ty: 1, props: { target: "jazz_club", entry: "from_town" } }),
+    obj({ name: "from_jazz", type: "entry", tx: 2, ty: 1 }),
   ];
 
   const map = makeMap(W, H, [
@@ -240,4 +251,87 @@ mkdirSync(OUT_DIR, { recursive: true });
   ]);
   writeFileSync(resolve(OUT_DIR, "studio-map.json"), JSON.stringify(map, null, 2) + "\n");
   console.log(`Wrote studio-map.json (studio, ${W}x${H})`);
+}
+
+// =============================================================================
+// JAZZ_CLUB — "The Blue Note" venue: a headliner boss (jazz team) and a
+// residency-gated VIP door. Beat the boss to earn the Jazz Residency.
+// =============================================================================
+{
+  nextObjectId = 1;
+  const W = 16;
+  const H = 12;
+  const idx = (x, y) => y * W + x;
+
+  const ground = new Array(W * H).fill(GRASS);
+  for (let x = 4; x <= 11; x++) ground[idx(x, 3)] = PATH; // the stage
+  ground[idx(7, 2)] = WATER; // blue "notes"
+  ground[idx(8, 2)] = WATER;
+  for (let y = 4; y < H - 1; y++) ground[idx(8, y)] = PATH; // aisle to the stage
+
+  const collision = new Array(W * H).fill(0);
+  border(collision, W, H);
+
+  const objects = [
+    obj({ name: "from_town", type: "entry", tx: 8, ty: 10 }),
+    // Headliner boss: faces the aisle and challenges on sight.
+    obj({
+      name: "jazz_headliner",
+      type: "trainer",
+      tx: 8,
+      ty: 4,
+      props: { trainer: "jazz_headliner", facing: "down", tint: "#9b59b6" },
+    }),
+    // VIP door — opens once you hold the Jazz Residency.
+    obj({
+      name: "vip_door",
+      type: "gate",
+      tx: 2,
+      ty: 2,
+      props: { requires: "jazz", target: "vip_lounge", entry: "vip_entry" },
+    }),
+    obj({ name: "to_town", type: "warp", tx: 14, ty: 10, props: { target: "town", entry: "from_jazz" } }),
+  ];
+
+  const map = makeMap(W, H, [
+    tileLayer(1, "ground", W, H, ground),
+    tileLayer(2, "collision", W, H, collision),
+    { id: 3, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
+  ]);
+  writeFileSync(resolve(OUT_DIR, "jazz-club-map.json"), JSON.stringify(map, null, 2) + "\n");
+  console.log(`Wrote jazz-club-map.json (jazz_club, ${W}x${H})`);
+}
+
+// =============================================================================
+// VIP_LOUNGE — the gated reward area unlocked by the Jazz Residency.
+// =============================================================================
+{
+  nextObjectId = 1;
+  const W = 8;
+  const H = 6;
+  const idx = (x, y) => y * W + x;
+
+  const ground = new Array(W * H).fill(PATH);
+  const collision = new Array(W * H).fill(0);
+  border(collision, W, H);
+
+  const objects = [
+    obj({ name: "vip_entry", type: "entry", tx: 4, ty: 4 }),
+    obj({
+      name: "vip_host",
+      type: "npc",
+      tx: 4,
+      ty: 2,
+      props: { dialogue: "vip_host", facing: "down", wander: false, tint: "#f1c40f" },
+    }),
+    obj({ name: "to_club", type: "warp", tx: 1, ty: 1, props: { target: "jazz_club", entry: "from_town" } }),
+  ];
+
+  const map = makeMap(W, H, [
+    tileLayer(1, "ground", W, H, ground),
+    tileLayer(2, "collision", W, H, collision),
+    { id: 3, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
+  ]);
+  writeFileSync(resolve(OUT_DIR, "vip-lounge-map.json"), JSON.stringify(map, null, 2) + "\n");
+  console.log(`Wrote vip-lounge-map.json (vip_lounge, ${W}x${H})`);
 }

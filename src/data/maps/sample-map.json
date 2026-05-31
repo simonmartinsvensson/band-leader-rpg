@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 4,
-  "nextobjectid": 10,
+  "nextobjectid": 13,
   "tilesets": [
     {
       "firstgid": 1,
@@ -1463,6 +1463,68 @@
           "type": "entry",
           "x": 160,
           "y": 32,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true
+        },
+        {
+          "id": 10,
+          "name": "rival_max",
+          "type": "trainer",
+          "x": 80,
+          "y": 80,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "trainer",
+              "type": "string",
+              "value": "rival_max"
+            },
+            {
+              "name": "facing",
+              "type": "string",
+              "value": "down"
+            },
+            {
+              "name": "tint",
+              "type": "string",
+              "value": "#e74c3c"
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "name": "to_jazz",
+          "type": "warp",
+          "x": 16,
+          "y": 16,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "target",
+              "type": "string",
+              "value": "jazz_club"
+            },
+            {
+              "name": "entry",
+              "type": "string",
+              "value": "from_town"
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "name": "from_jazz",
+          "type": "entry",
+          "x": 32,
+          "y": 16,
           "width": 16,
           "height": 16,
           "rotation": 0,
