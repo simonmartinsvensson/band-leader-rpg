@@ -82,6 +82,8 @@ export class GameMap implements WorldGrid {
         type: o.type ?? "",
         tileX: Math.floor((o.x ?? 0) / TILE_SIZE),
         tileY: Math.floor((o.y ?? 0) / TILE_SIZE),
+        tileW: Math.max(1, Math.round((o.width ?? TILE_SIZE) / TILE_SIZE)),
+        tileH: Math.max(1, Math.round((o.height ?? TILE_SIZE) / TILE_SIZE)),
         props,
       };
     });
@@ -91,9 +93,13 @@ export class GameMap implements WorldGrid {
 /** A parsed object from the map's "objects" layer. */
 export interface MapObject {
   name: string;
-  /** Tiled object "type"/class (e.g. "npc"). */
+  /** Tiled object "type"/class (e.g. "npc", "warp", "encounter"). */
   type: string;
+  /** Top-left tile of the object. */
   tileX: number;
   tileY: number;
+  /** Size in tiles (1×1 for point/marker objects, larger for region rectangles). */
+  tileW: number;
+  tileH: number;
   props: Record<string, string | number | boolean>;
 }

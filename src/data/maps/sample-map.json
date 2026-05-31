@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 4,
-  "nextobjectid": 4,
+  "nextobjectid": 6,
   "tilesets": [
     {
       "firstgid": 1,
@@ -1333,6 +1333,40 @@
               "value": "#7cc4ff"
             }
           ]
+        },
+        {
+          "id": 4,
+          "name": "to_street",
+          "type": "warp",
+          "x": 48,
+          "y": 128,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "target",
+              "type": "string",
+              "value": "street"
+            },
+            {
+              "name": "entry",
+              "type": "string",
+              "value": "from_town"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "name": "from_street",
+          "type": "entry",
+          "x": 48,
+          "y": 112,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true
         }
       ]
     }

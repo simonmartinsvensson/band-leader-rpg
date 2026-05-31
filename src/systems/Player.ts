@@ -39,6 +39,9 @@ export class Player {
   private facing: Direction = "down";
   private moving = false;
 
+  /** Called with the new tile each time a step finishes (warp/encounter hooks). */
+  onStepComplete?: (tileX: number, tileY: number) => void;
+
   constructor(scene: Phaser.Scene, gridX: number, gridY: number, world: WorldGrid) {
     this.scene = scene;
     this.gridX = gridX;
@@ -113,6 +116,7 @@ export class Player {
         this.gridX = targetX;
         this.gridY = targetY;
         this.moving = false;
+        this.onStepComplete?.(targetX, targetY);
       },
     });
   }
