@@ -139,6 +139,9 @@ mkdirSync(OUT_DIR, { recursive: true });
     // Warp south to the busking street; arrive back here from the street.
     obj({ name: "to_street", type: "warp", tx: 3, ty: 8, props: { target: "street", entry: "from_town" } }),
     obj({ name: "from_street", type: "entry", tx: 3, ty: 7 }),
+    // Warp east to the rehearsal studio; arrive back here from the studio.
+    obj({ name: "to_studio", type: "warp", tx: 10, ty: 1, props: { target: "studio", entry: "studio_entry" } }),
+    obj({ name: "from_studio", type: "entry", tx: 10, ty: 2 }),
   ];
 
   const map = makeMap(W, H, [
@@ -189,4 +192,36 @@ mkdirSync(OUT_DIR, { recursive: true });
   ]);
   writeFileSync(resolve(OUT_DIR, "street-map.json"), JSON.stringify(map, null, 2) + "\n");
   console.log(`Wrote street-map.json (street, ${W}x${H})`);
+}
+
+// =============================================================================
+// STUDIO — the rehearsal studio: a small room with a heal point (the "stage")
+// and a warp back to town. The defeat path also sends the player here.
+// =============================================================================
+{
+  nextObjectId = 1;
+  const W = 14;
+  const H = 10;
+  const idx = (x, y) => y * W + x;
+
+  const ground = new Array(W * H).fill(GRASS);
+  // A path "floor" down the middle leading to the stage.
+  for (let y = 2; y < H - 1; y++) ground[idx(7, y)] = PATH;
+
+  const collision = new Array(W * H).fill(0);
+  border(collision, W, H);
+
+  const objects = [
+    obj({ name: "studio_entry", type: "entry", tx: 7, ty: 6 }),
+    obj({ name: "stage", type: "heal", tx: 7, ty: 3 }),
+    obj({ name: "to_town", type: "warp", tx: 2, ty: 1, props: { target: "town", entry: "from_studio" } }),
+  ];
+
+  const map = makeMap(W, H, [
+    tileLayer(1, "ground", W, H, ground),
+    tileLayer(2, "collision", W, H, collision),
+    { id: 3, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
+  ]);
+  writeFileSync(resolve(OUT_DIR, "studio-map.json"), JSON.stringify(map, null, 2) + "\n");
+  console.log(`Wrote studio-map.json (studio, ${W}x${H})`);
 }

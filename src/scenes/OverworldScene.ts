@@ -13,7 +13,10 @@ import { getEncounterZone } from "../data/encounters";
 import { MAPS, MapKeys } from "../data/maps";
 import { createInstance } from "../systems/stats";
 import { SPECIES } from "../data/species";
+import { createStarterParty, healParty } from "../systems/party";
 import type { BattleData } from "./BattleScene";
+import type { PartyData } from "./PartyScene";
+import type { MusicianInstance } from "../types/musician";
 
 /** A warp target: which map to load and which entry point to place the player at. */
 interface Warp {
@@ -46,6 +49,7 @@ export class OverworldScene extends Phaser.Scene {
   private interactKeys!: Phaser.Input.Keyboard.Key[];
   private interactWasDown = false;
   private debugBattleKey!: Phaser.Input.Keyboard.Key;
+  private partyKey!: Phaser.Input.Keyboard.Key;
 
   /** Current map key + the entry to spawn at (set by init from scene data). */
   private mapKey: string = MapKeys.TOWN;
@@ -53,6 +57,7 @@ export class OverworldScene extends Phaser.Scene {
 
   private readonly warps = new Map<string, Warp>(); // "x,y" -> warp
   private readonly encounterTiles = new Map<string, string>(); // "x,y" -> zone id
+  private readonly healTiles = new Set<string>(); // "x,y" -> studio heal point
   private pendingWarp: Warp | null = null;
   private encounterLock = false;
 
@@ -69,10 +74,14 @@ export class OverworldScene extends Phaser.Scene {
     this.npcs = [];
     this.warps.clear();
     this.encounterTiles.clear();
+    this.healTiles.clear();
     this.pendingWarp = null;
     this.encounterLock = false;
     this.interactWasDown = false;
     this.moveInput = new MovementController();
+
+    // The party is game-global state (survives scene restarts / warps).
+    if (!this.registry.has("party")) this.registry.set("party", createStarterParty());
 
     const map = new GameMap(this, this.mapKey, MAPS[this.mapKey]);
 
@@ -85,11 +94,12 @@ export class OverworldScene extends Phaser.Scene {
 
     this.buildObjects(map, isWalkable);
 
-    // The player's world: map collision plus any tile an NPC occupies.
+    // The player's world: map collision, any NPC tile, and heal points (so the
+    // player faces them to interact rather than walking onto them).
     const world: WorldGrid = {
       cols: map.cols,
       rows: map.rows,
-      isBlocked: (x, y) => map.isBlocked(x, y) || npcAt(x, y),
+      isBlocked: (x, y) => map.isBlocked(x, y) || npcAt(x, y) || this.healTiles.has(key(x, y)),
     };
 
     const spawn = map.getSpawn(this.entryName);
@@ -111,6 +121,7 @@ export class OverworldScene extends Phaser.Scene {
     }) as Record<Direction, Phaser.Input.Keyboard.Key>;
     this.interactKeys = [keyboard.addKey(KC.SPACE), keyboard.addKey(KC.ENTER)];
     this.debugBattleKey = keyboard.addKey(KC.B); // debug: launch a test battle
+    this.partyKey = keyboard.addKey(KC.P); // open the party menu
   }
 
   update(time: number): void {
@@ -136,17 +147,27 @@ export class OverworldScene extends Phaser.Scene {
 
     if (interactPressed && !this.player.isMoving && !this.encounterLock) this.tryInteract();
 
+    if (this.player.isMoving || this.encounterLock) return;
+
     // Debug: launch a test battle directly (no encounter needed).
-    if (Phaser.Input.Keyboard.JustDown(this.debugBattleKey) && !this.player.isMoving && !this.encounterLock) {
-      this.launchDebugBattle();
+    if (Phaser.Input.Keyboard.JustDown(this.debugBattleKey)) this.launchDebugBattle();
+    // Open the party menu.
+    if (Phaser.Input.Keyboard.JustDown(this.partyKey)) {
+      this.scene.pause();
+      const data: PartyData = { parent: this.scene.key };
+      this.scene.launch("PartyScene", data);
     }
   }
 
-  /** Start a battle against a fake opponent with a fake party (debug key 'B'). */
+  private party(): MusicianInstance[] {
+    return this.registry.get("party") as MusicianInstance[];
+  }
+
+  /** Start a battle: the persistent party vs a weak wild opponent (debug key 'B'). */
   private launchDebugBattle(): void {
     const data: BattleData = {
-      party: [createInstance(SPECIES.rifflet, 12)],
-      opponent: createInstance(SPECIES.grooveling, 16),
+      party: this.party(),
+      opponent: createInstance(SPECIES.grooveling, 3),
       parent: this.scene.key,
     };
     this.scene.pause();
@@ -219,6 +240,13 @@ export class OverworldScene extends Phaser.Scene {
         overlay
           .fillStyle(0xcc66ff, 0.22)
           .fillRect(obj.tileX * TILE_SIZE, obj.tileY * TILE_SIZE, obj.tileW * TILE_SIZE, obj.tileH * TILE_SIZE);
+      } else if (obj.type === "heal") {
+        this.healTiles.add(key(obj.tileX, obj.tileY));
+        // A "+" marker so the rehearsal-studio heal point reads clearly.
+        const px = obj.tileX * TILE_SIZE;
+        const py = obj.tileY * TILE_SIZE;
+        overlay.fillStyle(0x4caf50, 0.4).fillRect(px, py, TILE_SIZE, TILE_SIZE);
+        overlay.fillStyle(0xffffff, 0.95).fillRect(px + 7, py + 3, 2, 10).fillRect(px + 3, py + 7, 10, 2);
       }
     }
   }
@@ -229,6 +257,17 @@ export class OverworldScene extends Phaser.Scene {
     const { x: dx, y: dy } = DIRECTION_VECTORS[facing];
     const targetX = this.player.tileX + dx;
     const targetY = this.player.tileY + dy;
+
+    // Rehearsal studio heal point.
+    if (this.healTiles.has(key(targetX, targetY))) {
+      healParty(this.party());
+      console.log("party healed");
+      this.openDialogue(
+        ["The band takes five and tunes up.", "Everyone's stamina is fully restored!"],
+        "Rehearsal Studio",
+      );
+      return;
+    }
 
     const npc = this.npcs.find((n) => n.occupies(targetX, targetY));
     if (!npc) return;

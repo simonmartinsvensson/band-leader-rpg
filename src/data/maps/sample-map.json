@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 4,
-  "nextobjectid": 6,
+  "nextobjectid": 8,
   "tilesets": [
     {
       "firstgid": 1,
@@ -1363,6 +1363,40 @@
           "type": "entry",
           "x": 48,
           "y": 112,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true
+        },
+        {
+          "id": 6,
+          "name": "to_studio",
+          "type": "warp",
+          "x": 160,
+          "y": 16,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "target",
+              "type": "string",
+              "value": "studio"
+            },
+            {
+              "name": "entry",
+              "type": "string",
+              "value": "studio_entry"
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "name": "from_studio",
+          "type": "entry",
+          "x": 160,
+          "y": 32,
           "width": 16,
           "height": 16,
           "rotation": 0,

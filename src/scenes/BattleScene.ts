@@ -12,16 +12,19 @@ import {
   type Side,
 } from "../systems/battle";
 import { getTechnique } from "../data/techniques";
+import { awardXp, xpReward } from "../systems/progression";
+import { firstAliveIndex, healParty } from "../systems/party";
+import { makeBattler } from "../systems/battle";
 import type { MusicianInstance } from "../types/musician";
 
-/** Scene data: a fake party + opponent + the scene to resume on exit. */
+/** Scene data: the player's party + opponent + the scene to resume on exit. */
 export interface BattleData {
   party: MusicianInstance[];
   opponent: MusicianInstance;
   parent: string;
 }
 
-type Phase = "intro" | "command" | "technique" | "busy" | "over";
+type Phase = "intro" | "command" | "technique" | "switch" | "busy" | "over";
 
 interface Step {
   text?: string;
@@ -56,6 +59,10 @@ export class BattleScene extends Phaser.Scene {
   private parent = "OverworldScene";
   private phase: Phase = "intro";
 
+  private party: MusicianInstance[] = [];
+  private activeIndex = 0;
+  private participants = new Set<MusicianInstance>();
+
   private message!: Phaser.GameObjects.BitmapText;
   private prompt!: Phaser.GameObjects.BitmapText;
   private commandTexts: Phaser.GameObjects.BitmapText[] = [];
@@ -64,9 +71,11 @@ export class BattleScene extends Phaser.Scene {
   private commandIndex = 0;
   private techIndex = 0;
   private techniqueIds: string[] = [];
+  private switchOptions: number[] = []; // party indices selectable when switching
 
   private hpBars!: Record<Side, Phaser.GameObjects.Graphics>;
   private hpText!: Phaser.GameObjects.BitmapText;
+  private playerName!: Phaser.GameObjects.BitmapText;
   private sprites!: Record<Side, Phaser.GameObjects.Sprite>;
 
   private keys!: {
@@ -83,7 +92,10 @@ export class BattleScene extends Phaser.Scene {
   }
 
   init(data: BattleData): void {
-    this.battle = createBattleState(data.party[0], data.opponent);
+    this.party = data.party;
+    this.activeIndex = Math.max(0, firstAliveIndex(data.party));
+    this.battle = createBattleState(this.party[this.activeIndex], data.opponent);
+    this.participants = new Set([this.party[this.activeIndex]]);
     this.parent = data.parent ?? "OverworldScene";
     this.phase = "intro";
     this.commandIndex = 0;
@@ -114,6 +126,7 @@ export class BattleScene extends Phaser.Scene {
   update(): void {
     if (this.phase === "command") this.handleCommandInput();
     else if (this.phase === "technique") this.handleTechniqueInput();
+    else if (this.phase === "switch") this.handleSwitchInput();
   }
 
   // --- Layout ----------------------------------------------------------------
@@ -148,7 +161,7 @@ export class BattleScene extends Phaser.Scene {
       .fillRect(136, 74, 98, 30)
       .lineStyle(1, 0xffffff, 0.8)
       .strokeRect(136, 74, 98, 30);
-    createText(this, 140, 77, `${me.instance.nickname}  Lv${me.instance.level}`);
+    this.playerName = createText(this, 140, 77, `${me.instance.nickname}  Lv${me.instance.level}`);
     this.hpText = createText(this, 140, 96, "");
 
     this.hpBars = { player: this.add.graphics(), opponent: this.add.graphics() };
@@ -308,11 +321,105 @@ export class BattleScene extends Phaser.Scene {
     this.playEvents(events);
   }
 
+  // --- Forced switch (active musician fainted) -------------------------------
+
+  private enterSwitch(): void {
+    this.phase = "switch";
+    this.techIndex = 0;
+    this.message.setVisible(false);
+    this.commandTexts.forEach((t) => t.setVisible(false));
+    const shown = this.switchOptions.slice(0, TECH_POS.length);
+    this.techTexts.forEach((t, i) => {
+      const pi = shown[i];
+      if (pi === undefined) {
+        t.setVisible(false);
+        return;
+      }
+      const m = this.party[pi];
+      t.setText(`${m.nickname} Lv${m.level} (${m.currentStamina}/${m.stats.stamina})`);
+      t.setVisible(true);
+    });
+    this.prompt.setPosition(150, 122).setText("Choose!").setVisible(true);
+    this.moveTechCursor();
+    this.cursor.setVisible(true);
+  }
+
+  private handleSwitchInput(): void {
+    const count = Math.min(this.switchOptions.length, TECH_POS.length);
+    if (this.pressed("up") && this.techIndex > 0) this.techIndex--;
+    else if (this.pressed("down") && this.techIndex + 1 < count) this.techIndex++;
+    this.moveTechCursor();
+    if (this.pressed("confirm")) this.doSwitch(this.switchOptions[this.techIndex]);
+  }
+
+  private doSwitch(partyIndex: number): void {
+    this.activeIndex = partyIndex;
+    const inst = this.party[partyIndex];
+    this.battle.player = makeBattler(inst);
+    this.battle.outcome = "ongoing";
+    this.participants.add(inst);
+    this.sprites.player.setAlpha(1).setTint(genreColor(this.battle.player.genres[0]));
+    this.playerName.setText(`${inst.nickname}  Lv${inst.level}`);
+    this.refreshHp("player");
+    this.runMessages([`Go, ${inst.nickname}!`], () => this.enterCommand());
+  }
+
   private playEvents(events: BattleEvent[]): void {
     this.phase = "busy";
     this.playSteps(this.eventsToSteps(events), () => {
-      if (this.battle.outcome === "ongoing") this.enterCommand();
-      else this.endBattle();
+      switch (this.battle.outcome) {
+        case "ongoing":
+          this.enterCommand();
+          break;
+        case "player_won":
+          this.handleVictory();
+          break;
+        case "player_lost":
+          this.handleActiveFaint();
+          break;
+        default:
+          this.endBattle();
+      }
+    });
+  }
+
+  /** Opponent fainted: award XP to participants, announce level-ups, then exit. */
+  private handleVictory(): void {
+    const reward = xpReward(this.battle.opponent.instance);
+    const messages: string[] = [];
+    for (const inst of this.participants) {
+      if (inst.currentStamina <= 0) continue;
+      messages.push(`${inst.nickname} gained ${reward} XP!`);
+      for (const up of awardXp(inst, reward)) {
+        messages.push(`${inst.nickname} grew to Lv ${up.level}!`);
+        for (const id of up.forgot) messages.push(`${inst.nickname} forgot ${techName(id)}.`);
+        for (const id of up.learned) messages.push(`${inst.nickname} learned ${techName(id)}!`);
+      }
+    }
+    this.refreshHp("player"); // max stamina may have grown
+    this.playerName.setText(`${this.battle.player.instance.nickname}  Lv${this.battle.player.instance.level}`);
+    console.log(`battle outcome: player_won (xp ${reward})`);
+    this.runMessages(messages, () => this.endBattle());
+  }
+
+  /** Active musician fainted: switch to a reserve, or lose if none remain. */
+  private handleActiveFaint(): void {
+    this.switchOptions = this.party
+      .map((_, i) => i)
+      .filter((i) => i !== this.activeIndex && this.party[i].currentStamina > 0);
+    if (this.switchOptions.length === 0) {
+      this.handleDefeat();
+      return;
+    }
+    this.enterSwitch();
+  }
+
+  private handleDefeat(): void {
+    healParty(this.party); // patched up on the way back
+    console.log("battle outcome: player_lost");
+    this.runMessages(["All your musicians fainted!", "You head back to the studio..."], () => {
+      this.scene.start("OverworldScene", { map: "studio", entry: "studio_entry" });
+      this.scene.stop();
     });
   }
 
@@ -412,4 +519,8 @@ export class BattleScene extends Phaser.Scene {
 
 function genreColor(genre: string | undefined): number {
   return genre && genre in GENRES ? GENRES[genre as keyof typeof GENRES].color : 0xffffff;
+}
+
+function techName(id: string): string {
+  return getTechnique(id)?.name ?? id;
 }
