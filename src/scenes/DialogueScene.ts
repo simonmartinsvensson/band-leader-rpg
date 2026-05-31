@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT } from "../data/constants";
+import { createText } from "../ui/text";
 
 /** Data passed when launching the dialogue overlay. */
 export interface DialogueData {
@@ -28,8 +29,8 @@ export class DialogueScene extends Phaser.Scene {
 
   private pageIndex = 0;
   private typing = false;
-  private bodyText!: Phaser.GameObjects.Text;
-  private indicator!: Phaser.GameObjects.Text;
+  private bodyText!: Phaser.GameObjects.BitmapText;
+  private indicator!: Phaser.GameObjects.Triangle;
   private typeTimer?: Phaser.Time.TimerEvent;
   private advanceKeys!: Phaser.Input.Keyboard.Key[];
 
@@ -56,28 +57,19 @@ export class DialogueScene extends Phaser.Scene {
 
     let textTop = boxY + PADDING;
     if (this.speaker) {
-      this.add.text(boxX + PADDING, textTop, this.speaker, {
-        fontFamily: "monospace",
-        fontSize: "8px",
-        color: "#ffd54f",
-      });
-      textTop += 12;
+      createText(this, boxX + PADDING, textTop, this.speaker, { color: 0xffd54f });
+      textTop += 10;
     }
 
-    this.bodyText = this.add.text(boxX + PADDING, textTop, "", {
-      fontFamily: "monospace",
-      fontSize: "8px",
-      color: "#ffffff",
-      wordWrap: { width: boxW - PADDING * 2 },
+    this.bodyText = createText(this, boxX + PADDING, textTop, "", {
+      maxWidth: boxW - PADDING * 2,
     });
 
+    // Crisp "more" arrow as a shape (a glyph would smooth-scale like Text did).
+    const ix = boxX + boxW - PADDING - 3;
+    const iy = boxY + BOX_HEIGHT - PADDING - 3;
     this.indicator = this.add
-      .text(boxX + boxW - PADDING - 2, boxY + BOX_HEIGHT - PADDING - 2, "▼", {
-        fontFamily: "monospace",
-        fontSize: "8px",
-        color: "#ffffff",
-      })
-      .setOrigin(1, 1)
+      .triangle(ix, iy, 0, 0, 5, 0, 2, 3, 0xffffff)
       .setVisible(false);
     this.tweens.add({
       targets: this.indicator,

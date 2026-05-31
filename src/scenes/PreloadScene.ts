@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT } from "../data/constants";
 import { SPRITESHEETS, IMAGES, FRAME_CONFIG } from "../data/assets";
+import { createText } from "../ui/text";
 
 /**
  * Loads every game asset (by key, from src/data/assets.ts) while showing a
@@ -36,13 +37,7 @@ export class PreloadScene extends Phaser.Scene {
     const x = (GAME_WIDTH - barWidth) / 2;
     const y = GAME_HEIGHT / 2 - barHeight / 2;
 
-    const label = this.add
-      .text(GAME_WIDTH / 2, y - 12, "Loading...", {
-        fontFamily: "monospace",
-        fontSize: "8px",
-        color: "#ffffff",
-      })
-      .setOrigin(0.5);
+    const label = createText(this, GAME_WIDTH / 2, y - 12, "Loading...", { origin: 0.5 });
 
     const border = this.add.graphics();
     border.lineStyle(1, 0xffffff, 1).strokeRect(x, y, barWidth, barHeight);

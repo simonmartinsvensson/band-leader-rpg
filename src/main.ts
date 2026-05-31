@@ -12,8 +12,10 @@ const config: Phaser.Types.Core.GameConfig = {
   width: GAME_WIDTH,
   height: GAME_HEIGHT,
   backgroundColor: BACKGROUND_COLOR,
-  // Crisp scaling for a 16x16-tile pixel-art game.
+  // Crisp scaling for a 16x16-tile pixel-art game. roundPixels keeps glyphs and
+  // sprites on whole pixels so the bitmap font stays sharp when upscaled.
   pixelArt: true,
+  roundPixels: true,
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

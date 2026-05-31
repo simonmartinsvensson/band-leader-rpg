@@ -8,6 +8,8 @@ export const AssetKeys = {
   PLAYER: "player",
   NPC: "npc",
   TILES: "tiles",
+  /** Bitmap-font atlas image. Loaded early in BootScene (see src/ui/font.ts). */
+  FONT: "font",
 } as const;
 
 /** Player spritesheet frame order (one 16x16 frame per facing direction). */
