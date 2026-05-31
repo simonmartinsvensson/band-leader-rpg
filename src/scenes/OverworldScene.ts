@@ -12,7 +12,7 @@ import { getDialogue } from "../data/dialogues";
 import { getEncounterZone } from "../data/encounters";
 import { MAPS, MapKeys } from "../data/maps";
 import { createInstance } from "../systems/stats";
-import { SPECIES } from "../data/species";
+import { SPECIES, getSpecies } from "../data/species";
 import { createStarterParty, healParty } from "../systems/party";
 import type { BattleData } from "./BattleScene";
 import type { PartyData } from "./PartyScene";
@@ -29,9 +29,6 @@ interface OverworldData {
   map?: string;
   entry?: string;
 }
-
-/** How long player movement pauses after an encounter triggers (ms). */
-const ENCOUNTER_PAUSE = 300;
 
 /**
  * Walkable overworld: loads a Tiled map (by key from the map registry), spawns
@@ -59,7 +56,7 @@ export class OverworldScene extends Phaser.Scene {
   private readonly encounterTiles = new Map<string, string>(); // "x,y" -> zone id
   private readonly healTiles = new Set<string>(); // "x,y" -> studio heal point
   private pendingWarp: Warp | null = null;
-  private encounterLock = false;
+  private pendingBattle: MusicianInstance | null = null;
 
   constructor() {
     super("OverworldScene");
@@ -76,12 +73,14 @@ export class OverworldScene extends Phaser.Scene {
     this.encounterTiles.clear();
     this.healTiles.clear();
     this.pendingWarp = null;
-    this.encounterLock = false;
+    this.pendingBattle = null;
     this.interactWasDown = false;
     this.moveInput = new MovementController();
 
-    // The party is game-global state (survives scene restarts / warps).
+    // Game-global state (survives scene restarts / warps).
     if (!this.registry.has("party")) this.registry.set("party", createStarterParty());
+    if (!this.registry.has("roster")) this.registry.set("roster", []);
+    if (!this.registry.has("bag")) this.registry.set("bag", { demo_tape: 3 });
 
     const map = new GameMap(this, this.mapKey, MAPS[this.mapKey]);
 
@@ -132,6 +131,13 @@ export class OverworldScene extends Phaser.Scene {
       this.scene.restart({ map: warp.target, entry: warp.entry });
       return;
     }
+    // An encounter queued by the previous step: start the battle.
+    if (this.pendingBattle) {
+      const opponent = this.pendingBattle;
+      this.pendingBattle = null;
+      this.startBattle(opponent);
+      return;
+    }
 
     // Track the interact edge every frame (even while paused for dialogue) so a
     // held button can't re-trigger an interaction when the overworld resumes.
@@ -139,15 +145,13 @@ export class OverworldScene extends Phaser.Scene {
     const interactPressed = interactDown && !this.interactWasDown;
     this.interactWasDown = interactDown;
 
-    // Movement is suppressed during the brief post-encounter pause.
-    const held = this.encounterLock ? [] : this.getHeldDirections();
-    const intent = this.moveInput.update(held, time);
+    const intent = this.moveInput.update(this.getHeldDirections(), time);
     this.player.update(intent);
     for (const npc of this.npcs) npc.update(time);
 
-    if (interactPressed && !this.player.isMoving && !this.encounterLock) this.tryInteract();
+    if (interactPressed && !this.player.isMoving) this.tryInteract();
 
-    if (this.player.isMoving || this.encounterLock) return;
+    if (this.player.isMoving) return;
 
     // Debug: launch a test battle directly (no encounter needed).
     if (Phaser.Input.Keyboard.JustDown(this.debugBattleKey)) this.launchDebugBattle();
@@ -163,15 +167,16 @@ export class OverworldScene extends Phaser.Scene {
     return this.registry.get("party") as MusicianInstance[];
   }
 
-  /** Start a battle: the persistent party vs a weak wild opponent (debug key 'B'). */
-  private launchDebugBattle(): void {
-    const data: BattleData = {
-      party: this.party(),
-      opponent: createInstance(SPECIES.grooveling, 3),
-      parent: this.scene.key,
-    };
+  /** Pause the overworld and launch a battle against the given opponent. */
+  private startBattle(opponent: MusicianInstance): void {
+    const data: BattleData = { party: this.party(), opponent, parent: this.scene.key };
     this.scene.pause();
     this.scene.launch("BattleScene", data);
+  }
+
+  /** Debug: battle a weak wild opponent directly (debug key 'B'). */
+  private launchDebugBattle(): void {
+    this.startBattle(createInstance(SPECIES.grooveling, 3));
   }
 
   /** React to the player finishing a step: warp, then encounter checks. */
@@ -182,21 +187,23 @@ export class OverworldScene extends Phaser.Scene {
       return;
     }
     const zoneId = this.encounterTiles.get(key(x, y));
-    if (zoneId) this.tryEncounter(zoneId);
+    if (zoneId) {
+      const opponent = this.rollEncounterOpponent(zoneId);
+      if (opponent) this.pendingBattle = opponent; // started in update() (not mid-tween)
+    }
   }
 
-  private tryEncounter(zoneId: string): void {
+  /** Roll a zone encounter and, on a hit, build a wild opponent instance. */
+  private rollEncounterOpponent(zoneId: string): MusicianInstance | null {
     const zone = getEncounterZone(zoneId);
-    if (!zone) return;
-    const musician = rollEncounter(zone);
-    if (!musician) return;
-
-    // TODO: launch the real battle/audition scene here.
-    console.log(`encounter triggered! zone=${zoneId} musician=${musician}`);
-    this.encounterLock = true;
-    this.time.delayedCall(ENCOUNTER_PAUSE, () => {
-      this.encounterLock = false;
-    });
+    if (!zone) return null;
+    const speciesId = rollEncounter(zone); // null when no encounter this step
+    if (!speciesId) return null;
+    const species = getSpecies(speciesId);
+    if (!species) return null;
+    const span = Math.max(1, zone.maxLevel - zone.minLevel + 1);
+    const level = zone.minLevel + Math.floor(Math.random() * span);
+    return createInstance(species, level);
   }
 
   /** Build NPCs, warps, and encounter zones from the map's objects layer. */

@@ -4,17 +4,19 @@
 export interface EncounterZone {
   /** Per-step chance (0..1) to trigger an encounter while standing in the zone. */
   rate: number;
-  /**
-   * Pool of musician ids that can be encountered here. Placeholder ids for now —
-   * real musician data + battles come later.
-   */
+  /** Inclusive level range for encountered musicians. */
+  minLevel: number;
+  maxLevel: number;
+  /** Pool of species ids (from src/data/species.ts) that can appear here. */
   musicians: string[];
 }
 
 export const ENCOUNTER_ZONES: Record<string, EncounterZone> = {
   busking_street: {
     rate: 0.5,
-    musicians: ["busker_drummer", "subway_singer", "open_mic_guitarist"],
+    minLevel: 5,
+    maxLevel: 8,
+    musicians: ["grooveling", "crooner", "balladeer"],
   },
 };
 

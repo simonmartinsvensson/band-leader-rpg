@@ -161,11 +161,10 @@ image + GID map, not by special-casing logic.
   next `update()` so it never happens mid-tween. Initial launch uses no data → `town` /
   `player_start`.
 - **Encounter zones** — data-driven in `src/data/encounters.ts`: `ENCOUNTER_ZONES[id] = { rate
-  (0..1 per step), musicians: string[] }`. When a step finishes on an encounter tile,
-  `rollEncounter(zone)` (`src/systems/encounters.ts`, pure + unit-tested) rolls; on success the
-  scene logs `encounter triggered!` and briefly suppresses movement (`ENCOUNTER_PAUSE`). The real
-  battle/audition hook is a TODO there. Add zones to the data table; reference them from an
-  `encounter` map object's `zone` prop.
+  (0..1 per step), minLevel, maxLevel, musicians: string[] (species ids) }`. When a step finishes
+  on an encounter tile, `rollEncounter(zone)` (`src/systems/encounters.ts`, pure + unit-tested)
+  rolls; on a hit the overworld starts a real battle (see Recruiting & encounters). Add zones to
+  the data table; reference them from an `encounter` map object's `zone` prop.
 
 ## NPCs & dialogue
 
@@ -243,7 +242,8 @@ Add musicians/genres/techniques by editing the data tables — no per-item logic
   bottom-right), an HP bar each, a command menu (Perform / Recruit / Bag / Run) and a technique
   submenu. It collects the player's action, calls `resolveTurn` (opponent action from the AI),
   then plays the events back as paced messages + HP-bar updates. Effectiveness feedback:
-  "It's a showstopper!" (super) / "It falls flat..." (not very). Recruit/Bag are stubs.
+  "It's a showstopper!" (super) / "It falls flat..." (not very). Recruit/Bag run auditions
+  (see Recruiting & encounters); progression/party handling on win/faint is below.
 - **Driving it**: `BattleScene` takes scene data `{ party: MusicianInstance[], opponent:
   MusicianInstance, parent }` — no musician data is hardcoded in the scene. The overworld
   launches it with a fake party on the **debug key `B`** (pauses the overworld, resumes on exit).
@@ -270,6 +270,28 @@ Add musicians/genres/techniques by editing the data tables — no per-item logic
 - **Rehearsal studio heal** — the `studio` map has a `heal`-type object (a blocking "stage" the
   player faces). Interacting calls `healParty` (restores all stamina to full) and shows a
   dialogue. `party.ts` provides `healParty`, `firstAliveIndex`, `isPartyDefeated`, `swapMembers`.
+
+## Recruiting (auditions) & encounters
+
+- **Audition math** (`src/systems/recruit.ts`, pure + tested) — `auditionAttempt({ maxStamina,
+  curStamina, difficulty, itemModifier })` is a FireRed-style catch roll adapted to stamina:
+  odds rise as the opponent's stamina drops, fall with species `recruitDifficulty`, and rise
+  with an item multiplier. Returns `{ success, shakes, chance }`; `shakes` (0..4) drives the
+  suspense animation.
+- **Roster overflow** (`src/systems/roster.ts`) — `recruit(party, roster, instance)` adds the
+  recruit to the party if there's room (< `MAX_PARTY`), else to the **roster** (overflow store).
+  Both are game-global in the registry (`"party"`, `"roster"`).
+- **Items** (`src/data/items.ts`) — the **Demo Tape** (`recruitModifier` 2) boosts odds. The bag
+  is registry state (`"bag"`, e.g. `{ demo_tape: 3 }`).
+- **In battle** — `Recruit` runs a plain audition; `Bag` → an item runs a boosted audition and
+  consumes it. Either way `BattleScene` plays the suspense (opponent sprite wobbles per shake),
+  then **success** ("They want to join your band!" → added to party/roster, battle ends) or
+  **failure** ("They walked off...") which **costs the player's turn** — the opponent still acts
+  (`resolveTurn` with a non-`perform` player action lets only the opponent move).
+- **Real encounters** — stepping in an encounter zone rolls `rollEncounter(zone)`; on a hit the
+  overworld picks a species from the zone pool, builds an opponent at a random level in the
+  zone's `minLevel..maxLevel`, and starts a real battle. (`busking_street`: grooveling / crooner
+  / balladeer, Lv 5–8.)
 
 ## Asset keys
 
@@ -315,7 +337,7 @@ nearest-neighbour, staying crisp like the tiles.
 - `npm test` — run the Vitest suite (`tests/`).
 - `npm run check:data` — run the data-model sanity checks + print a stats/effectiveness readout.
 - `npm run gen:assets` — regenerate the placeholder PNGs in `public/assets`.
-- `npm run gen:map` — regenerate the sample Tiled maps (`town`, `street`) in `src/data/maps`.
+- `npm run gen:map` — regenerate the sample Tiled maps (`town`, `street`, `studio`) in `src/data/maps`.
 - `npm run gen:font` — regenerate the bitmap-font atlas `public/assets/font.png`.
 - `npm run smoke` — headless Playwright check (boot, walk, collision, camera, NPC dialogue).
   Needs a server running first; defaults to the dev server (`npm run dev`), override `SMOKE_URL`.

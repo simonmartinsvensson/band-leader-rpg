@@ -15,6 +15,10 @@ import { getTechnique } from "../data/techniques";
 import { awardXp, xpReward } from "../systems/progression";
 import { firstAliveIndex, healParty } from "../systems/party";
 import { makeBattler } from "../systems/battle";
+import { auditionAttempt } from "../systems/recruit";
+import { recruit } from "../systems/roster";
+import { getSpecies } from "../data/species";
+import { ITEMS, getItem } from "../data/items";
 import type { MusicianInstance } from "../types/musician";
 
 /** Scene data: the player's party + opponent + the scene to resume on exit. */
@@ -24,7 +28,7 @@ export interface BattleData {
   parent: string;
 }
 
-type Phase = "intro" | "command" | "technique" | "switch" | "busy" | "over";
+type Phase = "intro" | "command" | "technique" | "switch" | "bag" | "busy" | "over";
 
 interface Step {
   text?: string;
@@ -72,6 +76,7 @@ export class BattleScene extends Phaser.Scene {
   private techIndex = 0;
   private techniqueIds: string[] = [];
   private switchOptions: number[] = []; // party indices selectable when switching
+  private bagItems: string[] = []; // item ids selectable in the bag
 
   private hpBars!: Record<Side, Phaser.GameObjects.Graphics>;
   private hpText!: Phaser.GameObjects.BitmapText;
@@ -127,6 +132,7 @@ export class BattleScene extends Phaser.Scene {
     if (this.phase === "command") this.handleCommandInput();
     else if (this.phase === "technique") this.handleTechniqueInput();
     else if (this.phase === "switch") this.handleSwitchInput();
+    else if (this.phase === "bag") this.handleBagInput();
   }
 
   // --- Layout ----------------------------------------------------------------
@@ -258,10 +264,10 @@ export class BattleScene extends Phaser.Scene {
         this.enterTechnique();
         break;
       case "Recruit":
-        this.runMessages(["You can't recruit yet!"], () => this.enterCommand());
+        this.tryRecruit(1); // plain audition
         break;
       case "Bag":
-        this.runMessages(["Your bag is empty!"], () => this.enterCommand());
+        this.enterBag();
         break;
       case "Run":
         this.doRun();
@@ -362,6 +368,104 @@ export class BattleScene extends Phaser.Scene {
     this.playerName.setText(`${inst.nickname}  Lv${inst.level}`);
     this.refreshHp("player");
     this.runMessages([`Go, ${inst.nickname}!`], () => this.enterCommand());
+  }
+
+  // --- Bag / recruiting ------------------------------------------------------
+
+  private bag(): Record<string, number> {
+    return this.registry.get("bag") ?? {};
+  }
+
+  private enterBag(): void {
+    const bag = this.bag();
+    this.bagItems = Object.keys(bag).filter((id) => bag[id] > 0 && getItem(id));
+    if (this.bagItems.length === 0) {
+      this.runMessages(["Your bag is empty!"], () => this.enterCommand());
+      return;
+    }
+    this.phase = "bag";
+    this.techIndex = 0;
+    this.message.setVisible(false);
+    this.commandTexts.forEach((t) => t.setVisible(false));
+    const shown = this.bagItems.slice(0, TECH_POS.length);
+    this.techTexts.forEach((t, i) => {
+      const id = shown[i];
+      if (id === undefined) {
+        t.setVisible(false);
+        return;
+      }
+      t.setText(`${ITEMS[id].name} x${bag[id]}`);
+      t.setVisible(true);
+    });
+    this.prompt.setPosition(150, 122).setText("Esc: Back").setVisible(true);
+    this.moveTechCursor();
+    this.cursor.setVisible(true);
+  }
+
+  private handleBagInput(): void {
+    if (this.pressed("cancel")) {
+      this.enterCommand();
+      return;
+    }
+    const count = Math.min(this.bagItems.length, TECH_POS.length);
+    if (this.pressed("up") && this.techIndex > 0) this.techIndex--;
+    else if (this.pressed("down") && this.techIndex + 1 < count) this.techIndex++;
+    this.moveTechCursor();
+    if (this.pressed("confirm")) {
+      const id = this.bagItems[this.techIndex];
+      this.tryRecruit(getItem(id)?.recruitModifier ?? 1, id);
+    }
+  }
+
+  /** Attempt an audition; success recruits, failure costs the player's turn. */
+  private tryRecruit(itemModifier: number, itemId?: string): void {
+    this.hideMenus();
+    this.phase = "busy";
+    const opp = this.battle.opponent.instance;
+    const difficulty = getSpecies(opp.speciesId)?.recruitDifficulty ?? 0.3;
+    const result = auditionAttempt(
+      { maxStamina: opp.stats.stamina, curStamina: opp.currentStamina, difficulty, itemModifier },
+    );
+    if (itemId) this.consumeItem(itemId);
+
+    const steps: Step[] = [];
+    if (itemId) steps.push({ text: `You play a ${ITEMS[itemId]?.name ?? "tape"}!` });
+    steps.push({ text: `${this.label("opponent")} sizes up your band...` });
+    const wobbles = result.success ? 3 : Math.min(result.shakes, 3);
+    for (let i = 0; i < wobbles; i++) {
+      steps.push({ apply: () => this.wobble(), text: ".".repeat(i + 1), delay: 500 });
+    }
+
+    if (result.success) {
+      const dest = recruit(this.party, this.registry.get("roster") ?? [], opp);
+      steps.push({ text: "They want to join your band!" });
+      steps.push({
+        text: dest === "party" ? `${opp.nickname} joined the band!` : `${opp.nickname} was sent to the roster.`,
+      });
+      this.playSteps(steps, () => {
+        console.log(`battle outcome: recruited (${dest})`);
+        this.exitTo();
+      });
+    } else {
+      steps.push({ text: "They walked off...", apply: () => this.sprites.opponent.setAlpha(1) });
+      this.playSteps(steps, () => this.opponentCounter());
+    }
+  }
+
+  private opponentCounter(): void {
+    // The audition used the player's turn; the opponent still acts.
+    const events = resolveTurn(this.battle, { kind: "recruit" }, chooseOpponentAction(this.battle.opponent));
+    this.playEvents(events);
+  }
+
+  private consumeItem(id: string): void {
+    const bag = this.bag();
+    if (bag[id]) bag[id] -= 1;
+  }
+
+  private wobble(): void {
+    const s = this.sprites.opponent;
+    this.tweens.add({ targets: s, x: s.x - 4, duration: 80, yoyo: true, repeat: 1 });
   }
 
   private playEvents(events: BattleEvent[]): void {
@@ -494,8 +598,13 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private endBattle(): void {
-    this.phase = "over";
     console.log(`battle outcome: ${this.battle.outcome}`);
+    this.exitTo();
+  }
+
+  /** Resume the parent (overworld) and close the battle. */
+  private exitTo(): void {
+    this.phase = "over";
     this.scene.resume(this.parent);
     this.scene.stop();
   }
