@@ -61,9 +61,42 @@ try {
   assert(right.scrollX > start.scrollX, `camera should have scrolled right (${start.scrollX} -> ${right.scrollX})`);
   await page.screenshot({ path: "/tmp/smoke-walk.png" });
 
+  // Walk down to the mentor NPC at (8,4): the player stops at (8,3) facing it
+  // (the NPC blocks its tile), proving NPC collision.
+  await tap("ArrowDown", 3);
+  const atNpc = await tile();
+  assert(atNpc.x === 8 && atNpc.y === 3, `should face the mentor from (8,3), got (${atNpc.x},${atNpc.y})`);
+
+  // Interact -> dialogue overlay opens with multiple pages.
+  const dlgState = () =>
+    page.evaluate(() => {
+      const g = globalThis.__GAME__;
+      if (!g.scene.isActive("DialogueScene")) return { active: false };
+      const d = g.scene.getScene("DialogueScene");
+      return { active: true, page: d.pageIndex, total: d.pages.length };
+    });
+
+  await tap("Space", 1); // interact
+  const opened = await dlgState();
+  assert(opened.active, "dialogue overlay should open on interact");
+  assert(opened.total > 1, `dialogue should be multi-page, got ${opened.total}`);
+  await page.screenshot({ path: "/tmp/smoke-dialogue.png" });
+
+  // Page through to the end (each tap finishes typing or advances a page).
+  let guard = 0;
+  while ((await dlgState()).active && guard < 40) {
+    await tap("Space", 1);
+    guard++;
+  }
+  assert(!(await dlgState()).active, "dialogue should close after the last page");
+  assert(
+    await page.evaluate(() => globalThis.__GAME__.scene.isActive("OverworldScene")),
+    "overworld should resume after dialogue closes",
+  );
+
   assert(errors.length === 0, `console/page errors: ${errors.join(" | ")}`);
 
-  console.log("SMOKE OK", JSON.stringify({ start, top, right }));
+  console.log("SMOKE OK", JSON.stringify({ start, top, right, atNpc, pages: opened.total }));
 } catch (err) {
   console.error(err.message || err);
   if (errors.length) console.error("Captured errors:", errors.join(" | "));

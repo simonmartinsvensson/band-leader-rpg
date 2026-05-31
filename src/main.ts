@@ -3,6 +3,7 @@ import { GAME_WIDTH, GAME_HEIGHT, BACKGROUND_COLOR } from "./data/constants";
 import { BootScene } from "./scenes/BootScene";
 import { PreloadScene } from "./scenes/PreloadScene";
 import { OverworldScene } from "./scenes/OverworldScene";
+import { DialogueScene } from "./scenes/DialogueScene";
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -17,8 +18,9 @@ const config: Phaser.Types.Core.GameConfig = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  // Scene flow: Boot -> Preload -> Overworld.
-  scene: [BootScene, PreloadScene, OverworldScene],
+  // Scene flow: Boot -> Preload -> Overworld. DialogueScene is an overlay
+  // launched on top of the overworld (listed last so it renders above it).
+  scene: [BootScene, PreloadScene, OverworldScene, DialogueScene],
 };
 
 const game = new Phaser.Game(config);

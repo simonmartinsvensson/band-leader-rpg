@@ -67,4 +67,33 @@ export class GameMap implements WorldGrid {
     }
     return { x: Math.floor(obj.x / TILE_SIZE), y: Math.floor(obj.y / TILE_SIZE) };
   }
+
+  /** All objects from the "objects" layer, with tile coords + flattened props. */
+  getObjects(): MapObject[] {
+    const layer = this.map.getObjectLayer(OBJECTS_LAYER);
+    if (!layer) return [];
+    return layer.objects.map((o) => {
+      const props: Record<string, string | number | boolean> = {};
+      for (const p of (o.properties ?? []) as Array<{ name: string; value: unknown }>) {
+        props[p.name] = p.value as string | number | boolean;
+      }
+      return {
+        name: o.name ?? "",
+        type: o.type ?? "",
+        tileX: Math.floor((o.x ?? 0) / TILE_SIZE),
+        tileY: Math.floor((o.y ?? 0) / TILE_SIZE),
+        props,
+      };
+    });
+  }
+}
+
+/** A parsed object from the map's "objects" layer. */
+export interface MapObject {
+  name: string;
+  /** Tiled object "type"/class (e.g. "npc"). */
+  type: string;
+  tileX: number;
+  tileY: number;
+  props: Record<string, string | number | boolean>;
 }

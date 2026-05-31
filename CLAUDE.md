@@ -57,20 +57,23 @@ add a data entry — do not write bespoke logic per item.
 ## Scene flow
 
 ```
-BootScene  ──▶  PreloadScene  ──▶  OverworldScene
-                                   (future: ──▶ AuditionScene / VenueScene / DialogScene ...)
+BootScene  ──▶  PreloadScene  ──▶  OverworldScene  ◀──overlay──▶  DialogueScene
+                                   (future: ──▶ AuditionScene / VenueScene ...)
 ```
 
 - **BootScene** — early synchronous setup; logs `"boot"`, then starts PreloadScene. No
   asset loading here.
 - **PreloadScene** — loads every asset (keys from `src/data/assets.ts`) while showing a
   loading bar, then starts OverworldScene.
-- **OverworldScene** — loads a Tiled map, renders it, blocks the player against collision
-  tiles, and follows the player with a camera clamped to the map bounds (see Maps + Movement).
-  NPCs and interactions come later.
+- **OverworldScene** — loads a Tiled map, spawns the player + NPCs, blocks the player against
+  collision tiles and NPCs, follows the player with a clamped camera, and opens NPC dialogue
+  on the interact button (see Maps + Movement + NPCs & dialogue).
+- **DialogueScene** — a modal overlay (not a sequential scene). The overworld `pause()`s
+  itself and `launch()`es it; on close it `resume()`s the overworld. Listed last in
+  `src/main.ts` so it renders on top.
 
-Scenes are registered in `src/main.ts` (`scene: [...]`); the first entry runs first and
-each scene starts the next with `this.scene.start(...)`.
+Sequential scenes start the next with `this.scene.start(...)`; the overlay uses
+`launch`/`pause`/`resume`/`stop`. All scenes are registered in `src/main.ts` (`scene: [...]`).
 
 ## Movement
 
@@ -115,13 +118,34 @@ it to `new GameMap(scene, key, json)`.
 - **`ground`** (tile layer) — visual base; never blocks.
 - **`collision`** (tile layer) — rendered *and* logical: **any non-empty cell blocks movement**.
   Put walls/water here so they're both visible and solid. (Empty cells = passable.)
-- **`objects`** (object layer) — spawns/markers. Each object has a `name`; `GameMap.getSpawn(name)`
-  returns its tile coords (object pixel x/y ÷ tile size). The required player spawn is the
-  object named **`player_start`**. Add more named objects here for NPCs, warps, etc.
+- **`objects`** (object layer) — spawns + actors. `GameMap.getSpawn(name)` returns the tile
+  coords of a named object (pixel x/y ÷ tile size); `GameMap.getObjects()` returns all objects
+  with their tile coords + flattened custom `properties`. Conventions:
+  - **`player_start`** — required object; the player spawn.
+  - **`npc`** (object `type`) — an NPC (see below). Custom properties: `dialogue` (string, a
+    key into `src/data/dialogues.ts`), `facing` (`up`/`down`/`left`/`right`), `wander` (bool),
+    `tint` (optional `#rrggbb`).
 
-Layer names (`ground`, `collision`, `objects`), the tileset name (`placeholder`), and
-`player_start` are the contract — keep them consistent across maps. New tile *types* are added
-by extending the tileset image + GID map, not by special-casing logic.
+Layer names (`ground`, `collision`, `objects`), the tileset name (`placeholder`),
+`player_start`, and the `npc` object type are the contract — keep them consistent across maps.
+New tile *types* are added by extending the tileset image + GID map, not by special-casing logic.
+
+## NPCs & dialogue
+
+- **`src/systems/NPC.ts`** — a grid-bound character spawned from `npc` map objects. It
+  occupies (and therefore blocks) its tile, has a facing direction, and optionally wanders to
+  free neighbouring tiles (reserving the target tile on step-start so nothing paths into it).
+  Phaser is a type-only import, so it's runtime-pure and unit-tested (`tests/npc.test.ts`).
+- **Collision** — `OverworldScene` builds the Player's `WorldGrid` as *map collision OR any
+  NPC tile*, and gives NPCs an `isWalkable` query that also excludes the player and other NPCs.
+- **Interaction** — pressing interact (**Space/Enter**) while idle and facing an NPC turns the
+  NPC to face the player and opens its dialogue. The interact edge is tracked every frame so a
+  held button can't re-fire when the overworld resumes.
+- **`src/scenes/DialogueScene.ts`** — the modal overlay: bottom text box, optional speaker
+  header, typewriter reveal. Space/Enter completes the current page if still typing, else
+  advances; past the last page it resumes the overworld and stops itself.
+- **Dialogue data** — `src/data/dialogues.ts`: `DIALOGUES[id] = { speaker?, pages: string[] }`,
+  one entry per page. An NPC's `dialogue` property is the id. Add/edit dialogue here, not in code.
 
 ## Asset keys
 
@@ -148,8 +172,8 @@ so loading works both in dev and from the GitHub Pages subpath.
 - `npm test` — run the Vitest suite (`tests/`).
 - `npm run gen:assets` — regenerate the placeholder PNGs in `public/assets`.
 - `npm run gen:map` — regenerate the sample Tiled map in `src/data/maps`.
-- `npm run smoke` — headless Playwright check (boot, walk, collision, camera). Needs a server
-  running first; defaults to the dev server (`npm run dev`), override with `SMOKE_URL`.
+- `npm run smoke` — headless Playwright check (boot, walk, collision, camera, NPC dialogue).
+  Needs a server running first; defaults to the dev server (`npm run dev`), override `SMOKE_URL`.
 
 ## Deploying to GitHub Pages
 

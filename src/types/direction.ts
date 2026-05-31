@@ -8,3 +8,13 @@ export const DIRECTION_VECTORS: Record<Direction, { x: number; y: number }> = {
   left: { x: -1, y: 0 },
   right: { x: 1, y: 0 },
 };
+
+/** The reverse of each direction (e.g. an NPC turning to face the player). */
+export const OPPOSITE: Record<Direction, Direction> = {
+  up: "down",
+  down: "up",
+  left: "right",
+  right: "left",
+};
+
+export const ALL_DIRECTIONS: Direction[] = ["up", "down", "left", "right"];

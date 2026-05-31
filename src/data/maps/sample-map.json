@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 4,
-  "nextobjectid": 2,
+  "nextobjectid": 4,
   "tilesets": [
     {
       "firstgid": 1,
@@ -1272,6 +1272,67 @@
           "height": 16,
           "rotation": 0,
           "visible": true
+        },
+        {
+          "id": 2,
+          "name": "mentor",
+          "type": "npc",
+          "x": 128,
+          "y": 64,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "dialogue",
+              "type": "string",
+              "value": "mentor"
+            },
+            {
+              "name": "facing",
+              "type": "string",
+              "value": "down"
+            },
+            {
+              "name": "wander",
+              "type": "bool",
+              "value": false
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "busker",
+          "type": "npc",
+          "x": 176,
+          "y": 144,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "dialogue",
+              "type": "string",
+              "value": "busker"
+            },
+            {
+              "name": "facing",
+              "type": "string",
+              "value": "left"
+            },
+            {
+              "name": "wander",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "name": "tint",
+              "type": "string",
+              "value": "#7cc4ff"
+            }
+          ]
         }
       ]
     }

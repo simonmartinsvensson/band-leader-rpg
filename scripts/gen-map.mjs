@@ -75,7 +75,7 @@ const map = {
   tilewidth: TILE,
   tileheight: TILE,
   nextlayerid: 4,
-  nextobjectid: 2,
+  nextobjectid: 4,
   tilesets: [
     {
       firstgid: 1,
@@ -114,6 +114,41 @@ const map = {
           height: TILE,
           rotation: 0,
           visible: true,
+        },
+        {
+          // Mentor: stationary, faces down, just south of the player's path.
+          id: 2,
+          name: "mentor",
+          type: "npc",
+          x: 8 * TILE,
+          y: 4 * TILE,
+          width: TILE,
+          height: TILE,
+          rotation: 0,
+          visible: true,
+          properties: [
+            { name: "dialogue", type: "string", value: "mentor" },
+            { name: "facing", type: "string", value: "down" },
+            { name: "wander", type: "bool", value: false },
+          ],
+        },
+        {
+          // Flavor NPC: wanders, tinted so it reads as a different character.
+          id: 3,
+          name: "busker",
+          type: "npc",
+          x: 11 * TILE,
+          y: 9 * TILE,
+          width: TILE,
+          height: TILE,
+          rotation: 0,
+          visible: true,
+          properties: [
+            { name: "dialogue", type: "string", value: "busker" },
+            { name: "facing", type: "string", value: "left" },
+            { name: "wander", type: "bool", value: true },
+            { name: "tint", type: "string", value: "#7cc4ff" },
+          ],
         },
       ],
     },
