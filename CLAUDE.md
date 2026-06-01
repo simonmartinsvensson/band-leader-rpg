@@ -461,7 +461,21 @@ nearest-neighbour, staying crisp like the tiles.
 
 ## Deploying to GitHub Pages
 
-GitHub Pages serves project sites from a subpath (`https://<user>.github.io/<reponame>/`),
-so the production build needs a matching base path. `vite.config.ts` sets `base` to
-`/band-leader-rpg/` for builds (override with the `VITE_BASE` env var if the repo name
-differs). Dev/preview use `/`.
+GitHub Pages serves project sites from a subpath (`https://<user>.github.io/<reponame>/`), so the
+production build needs a matching base path. `vite.config.ts` sets `base` to `/band-leader-rpg/`
+for builds, overridable via the `VITE_BASE` env var; dev/preview use `/`.
+
+Deployment is **automated** by `.github/workflows/deploy.yml`: every push to `main` runs
+`npm ci && npm run build` (with `VITE_BASE=/<repo-name>/`, so the base auto-matches the repo
+name) and publishes `dist/` via the official Pages actions (`configure-pages` →
+`upload-pages-artifact` → `deploy-pages`).
+
+**One-time GitHub setup:** create a repo named `band-leader-rpg`, push `main`, then in
+**Settings → Pages → Build and deployment**, set **Source = GitHub Actions**. After the workflow
+goes green the game is live at `https://<your-username>.github.io/band-leader-rpg/`.
+
+**Verifying the build locally** (production often breaks on asset paths even when dev works): the
+game loads assets via `this.load.setBaseURL(import.meta.env.BASE_URL)`, so a wrong base shows up
+as 404s / missing textures. After `npm run build`, serve `dist/` *under the subpath* (not just
+`vite preview`, which can flake on the module-script request) and confirm textures load with no
+404s. See README for the run/deploy quick reference.
