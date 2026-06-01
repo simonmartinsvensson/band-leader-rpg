@@ -12,6 +12,10 @@ import rockRoute from "./rock-route-map.json";
 import rockHub from "./rock-hub-map.json";
 import folkRoute from "./folk-route-map.json";
 import folkHub from "./folk-hub-map.json";
+import funkRoute from "./funk-route-map.json";
+import funkHub from "./funk-hub-map.json";
+import classicalRoute from "./classical-route-map.json";
+import classicalHub from "./classical-hub-map.json";
 
 export const MapKeys = {
   TOWN: "town",
@@ -27,6 +31,10 @@ export const MapKeys = {
   ROCK_HUB: "rock_hub",
   FOLK_ROUTE: "folk_route",
   FOLK_HUB: "folk_hub",
+  FUNK_ROUTE: "funk_route",
+  FUNK_HUB: "funk_hub",
+  CLASSICAL_ROUTE: "classical_route",
+  CLASSICAL_HUB: "classical_hub",
 } as const;
 
 export const MAPS: Record<string, object> = {
@@ -42,6 +50,10 @@ export const MAPS: Record<string, object> = {
   [MapKeys.ROCK_HUB]: rockHub,
   [MapKeys.FOLK_ROUTE]: folkRoute,
   [MapKeys.FOLK_HUB]: folkHub,
+  [MapKeys.FUNK_ROUTE]: funkRoute,
+  [MapKeys.FUNK_HUB]: funkHub,
+  [MapKeys.CLASSICAL_ROUTE]: classicalRoute,
+  [MapKeys.CLASSICAL_HUB]: classicalHub,
 };
 
 export function getMapData(key: string): object | undefined {

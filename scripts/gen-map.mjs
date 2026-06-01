@@ -189,6 +189,11 @@ mkdirSync(OUT_DIR, { recursive: true });
     obj({ name: "from_rock", type: "entry", tx: 27, ty: 5 }),
     obj({ name: "to_folk", type: "gate", tx: 28, ty: 17, props: { requires: "jazz", target: "folk_route", entry: "from_town" } }),
     obj({ name: "from_folk", type: "entry", tx: 27, ty: 17 }),
+    // Funk Block + Classical Hall open once you hold the Warehouse (electronic) Residency.
+    obj({ name: "to_funk", type: "gate", tx: 18, ty: 18, props: { requires: "electronic", target: "funk_route", entry: "from_town" } }),
+    obj({ name: "from_funk", type: "entry", tx: 18, ty: 17 }),
+    obj({ name: "to_classical", type: "gate", tx: 24, ty: 18, props: { requires: "electronic", target: "classical_route", entry: "from_town" } }),
+    obj({ name: "from_classical", type: "entry", tx: 24, ty: 17 }),
   ];
 
   const map = makeMap(W, H, [
@@ -603,5 +608,5 @@ const DISTRICTS = [
   { genre: "folk", routeKey: "folk_route", hubKey: "folk_hub", routeFile: "folk-route-map.json", hubFile: "folk-hub-map.json", zoneId: "folk_route", townReturnEntry: "from_folk", localDialogue: "folk_local", venueSignDialogue: "folk_venue_sign", flavorTint: "#27ae60" },
   { genre: "funk", routeKey: "funk_route", hubKey: "funk_hub", routeFile: "funk-route-map.json", hubFile: "funk-hub-map.json", zoneId: "funk_route", townReturnEntry: "from_funk", localDialogue: "funk_local", venueSignDialogue: "funk_venue_sign", flavorTint: "#e67e22" },
   { genre: "classical", routeKey: "classical_route", hubKey: "classical_hub", routeFile: "classical-route-map.json", hubFile: "classical-hub-map.json", zoneId: "classical_route", townReturnEntry: "from_classical", localDialogue: "classical_local", venueSignDialogue: "classical_venue_sign", flavorTint: "#f1c40f" },
-].filter((d) => ["rock", "folk"].includes(d.genre)); // funk + classical land in the next piece
+];
 for (const d of DISTRICTS) buildDistrict(d);

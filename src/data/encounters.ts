@@ -41,6 +41,20 @@ export const ENCOUNTER_ZONES: Record<string, EncounterZone> = {
     maxLevel: 13,
     musicians: ["balladeer", "wanderlay"],
   },
+  // Funk Block + Classical Hall open after the Warehouse (electronic) Residency
+  // (player ~Lv13+), so their pools run a tier higher.
+  funk_route: {
+    rate: 0.4,
+    minLevel: 13,
+    maxLevel: 17,
+    musicians: ["grooveling", "funkadel", "fusionaut"],
+  },
+  classical_route: {
+    rate: 0.4,
+    minLevel: 13,
+    maxLevel: 17,
+    musicians: ["maestrel", "sonatina", "orchestron"],
+  },
 };
 
 export function getEncounterZone(id: string): EncounterZone | undefined {

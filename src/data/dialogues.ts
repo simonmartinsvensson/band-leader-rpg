@@ -107,6 +107,28 @@ export const DIALOGUES: Record<string, Dialogue> = {
     speaker: "Sign",
     pages: ['"THE LANDING - riverside open mic."', "Opening its doors before long."],
   },
+  funk_local: {
+    speaker: "Block Captain",
+    pages: [
+      "The Block runs on the one, {name}. You feel that pocket? Monocorp can't bottle it.",
+      "Lock a tight groove down here and nobody's standing still.",
+    ],
+  },
+  funk_venue_sign: {
+    speaker: "Sign",
+    pages: ['"THE POCKET - soul & funk hall."', "Crew's still laying the dance floor. Soon."],
+  },
+  classical_local: {
+    speaker: "Hall Usher",
+    pages: [
+      "Welcome to the Hall, {name}. Precision and patience - the old disciplines.",
+      "Monocorp calls it outdated. We call it the foundation everything else stands on.",
+    ],
+  },
+  classical_venue_sign: {
+    speaker: "Sign",
+    pages: ['"THE CONSERVATORY - concert hall."', "Tuning the room. Doors open in due time."],
+  },
   park_scout: {
     speaker: "Talent Scout",
     pages: [
