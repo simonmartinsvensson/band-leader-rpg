@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT } from "../data/constants";
 import { SPRITESHEETS, IMAGES, FRAME_CONFIG } from "../data/assets";
 import { createText } from "../ui/text";
+import { loadSave, applyToStore, type SaveStore } from "../systems/save";
 
 /**
  * Loads every game asset (by key, from src/data/assets.ts) while showing a
@@ -28,7 +29,14 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.scene.start("OverworldScene");
+    // Resume from a save if one exists; otherwise start a fresh game (intro).
+    const save = loadSave();
+    if (save) {
+      applyToStore(this.registry as unknown as SaveStore, save);
+      this.scene.start("OverworldScene", { map: save.map, x: save.x, y: save.y });
+    } else {
+      this.scene.start("OverworldScene", { newGame: true });
+    }
   }
 
   private createLoadingBar(): void {

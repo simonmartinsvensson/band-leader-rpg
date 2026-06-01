@@ -40,8 +40,17 @@ const assert = (cond, msg) => {
 
 try {
   await page.goto(URL, { waitUntil: "load" });
-  await page.waitForFunction(() => globalThis.__GAME__?.scene.isActive("OverworldScene"), {
-    timeout: 10000,
+  // New game auto-plays an intro dialogue (overworld paused) — dismiss it first.
+  await page.waitForFunction(
+    () => globalThis.__GAME__?.scene.isActive("OverworldScene") || globalThis.__GAME__?.scene.isActive("DialogueScene"),
+    undefined,
+    { timeout: 10000 },
+  );
+  for (let i = 0; i < 12 && (await page.evaluate(() => globalThis.__GAME__.scene.isActive("DialogueScene"))); i++) {
+    await tap("Space", 1); // held tap so the dialogue's JustDown poll catches it
+  }
+  await page.waitForFunction(() => globalThis.__GAME__?.scene.isActive("OverworldScene"), undefined, {
+    timeout: 5000,
   });
 
   const start = await tile();

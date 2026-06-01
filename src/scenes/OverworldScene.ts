@@ -24,6 +24,7 @@ import type { PartyData } from "./PartyScene";
 import type { BagData } from "./BagScene";
 import type { ShopData } from "./ShopScene";
 import type { CareerData } from "./CareerScene";
+import type { PauseData } from "./PauseScene";
 import type { MusicianInstance } from "../types/musician";
 
 /** A warp target: which map to load and which entry point to place the player at. */
@@ -45,10 +46,16 @@ interface PlacedTrainer {
   sightRange: number;
 }
 
-/** Scene data passed when (re)starting the overworld, e.g. after a warp. */
+/** Scene data passed when (re)starting the overworld (warp, load, or new game). */
 interface OverworldData {
   map?: string;
+  /** Named spawn point (used by warps). */
   entry?: string;
+  /** Explicit spawn tile (used when loading a save). Overrides `entry`. */
+  x?: number;
+  y?: number;
+  /** Fresh game — play the intro and the party is the freshly-seeded starter. */
+  newGame?: boolean;
 }
 
 /**
@@ -74,6 +81,9 @@ export class OverworldScene extends Phaser.Scene {
   /** Current map key + the entry to spawn at (set by init from scene data). */
   private mapKey: string = MapKeys.TOWN;
   private entryName = "player_start";
+  private spawnTile: { x: number; y: number } | null = null;
+  private newGame = false;
+  private pauseKey!: Phaser.Input.Keyboard.Key;
 
   private readonly warps = new Map<string, Warp>(); // "x,y" -> warp
   private readonly encounterTiles = new Map<string, string>(); // "x,y" -> zone id
@@ -92,6 +102,8 @@ export class OverworldScene extends Phaser.Scene {
   init(data: OverworldData): void {
     this.mapKey = data?.map ?? MapKeys.TOWN;
     this.entryName = data?.entry ?? "player_start";
+    this.spawnTile = data?.x !== undefined && data?.y !== undefined ? { x: data.x, y: data.y } : null;
+    this.newGame = data?.newGame === true;
   }
 
   create(): void {
@@ -137,9 +149,10 @@ export class OverworldScene extends Phaser.Scene {
         map.isBlocked(x, y) || actorAt(x, y) || this.healTiles.has(key(x, y)) || this.gateTiles.has(key(x, y)),
     };
 
-    const spawn = map.getSpawn(this.entryName);
+    const spawn = this.spawnTile ?? map.getSpawn(this.entryName);
     this.player = new Player(this, spawn.x, spawn.y, world);
     this.player.onStepComplete = (x, y) => this.handleStepComplete(x, y);
+    this.registry.set("loc", { map: this.mapKey, x: spawn.x, y: spawn.y });
 
     const camera = this.cameras.main;
     camera.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
@@ -159,6 +172,14 @@ export class OverworldScene extends Phaser.Scene {
     this.partyKey = keyboard.addKey(KC.P); // open the party menu
     this.bagKey = keyboard.addKey(KC.I); // open the bag (inventory)
     this.careerKey = keyboard.addKey(KC.C); // open the career menu
+    this.pauseKey = keyboard.addKey(KC.ESC); // open the pause menu
+
+    // New game: the mentor hands you your band and explains the goal.
+    if (this.newGame) {
+      this.newGame = false;
+      const intro = getDialogue("intro");
+      if (intro) this.openDialogue(intro.pages, intro.speaker);
+    }
   }
 
   update(time: number): void {
@@ -216,6 +237,11 @@ export class OverworldScene extends Phaser.Scene {
       this.scene.pause();
       this.scene.launch("CareerScene", { parent: this.scene.key } satisfies CareerData);
     }
+    // Open the pause menu (save / sub-menus / resume).
+    if (Phaser.Input.Keyboard.JustDown(this.pauseKey)) {
+      this.scene.pause();
+      this.scene.launch("PauseScene", { parent: this.scene.key } satisfies PauseData);
+    }
   }
 
   private party(): MusicianInstance[] {
@@ -258,6 +284,7 @@ export class OverworldScene extends Phaser.Scene {
 
   /** React to the player finishing a step: warp, trainer sight, then encounter. */
   private handleStepComplete(x: number, y: number): void {
+    this.registry.set("loc", { map: this.mapKey, x, y }); // for saving
     const warp = this.warps.get(key(x, y));
     if (warp) {
       this.pendingWarp = warp; // applied in update() to avoid restarting mid-tween

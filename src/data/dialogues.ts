@@ -22,6 +22,15 @@ export interface Dialogue {
 }
 
 export const DIALOGUES: Record<string, Dialogue> = {
+  intro: {
+    speaker: "Vy the Producer",
+    pages: [
+      "Welcome to the scene! I'm Vy - I produce the up-and-comers.",
+      "Every leader needs a band. Here are your first two: a Rifflet and a Crooner. Look after them.",
+      "Your goal: recruit musicians, train them up, and win a residency at every venue.",
+      "The busking street is south of here. Go make some noise!",
+    ],
+  },
   mentor: {
     speaker: "Vy the Producer",
     pages: [
