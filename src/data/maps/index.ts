@@ -8,6 +8,10 @@ import vipLounge from "./vip-lounge-map.json";
 import park from "./park-map.json";
 import warehouse from "./warehouse-map.json";
 import backstage from "./backstage-map.json";
+import rockRoute from "./rock-route-map.json";
+import rockHub from "./rock-hub-map.json";
+import folkRoute from "./folk-route-map.json";
+import folkHub from "./folk-hub-map.json";
 
 export const MapKeys = {
   TOWN: "town",
@@ -18,6 +22,11 @@ export const MapKeys = {
   PARK: "park",
   WAREHOUSE: "warehouse",
   BACKSTAGE: "backstage",
+  // Genre districts (each: <genre>_route + <genre>_hub; venue in Phase 5).
+  ROCK_ROUTE: "rock_route",
+  ROCK_HUB: "rock_hub",
+  FOLK_ROUTE: "folk_route",
+  FOLK_HUB: "folk_hub",
 } as const;
 
 export const MAPS: Record<string, object> = {
@@ -29,6 +38,10 @@ export const MAPS: Record<string, object> = {
   [MapKeys.PARK]: park,
   [MapKeys.WAREHOUSE]: warehouse,
   [MapKeys.BACKSTAGE]: backstage,
+  [MapKeys.ROCK_ROUTE]: rockRoute,
+  [MapKeys.ROCK_HUB]: rockHub,
+  [MapKeys.FOLK_ROUTE]: folkRoute,
+  [MapKeys.FOLK_HUB]: folkHub,
 };
 
 export function getMapData(key: string): object | undefined {

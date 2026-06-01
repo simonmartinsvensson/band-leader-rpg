@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 4,
-  "nextobjectid": 16,
+  "nextobjectid": 20,
   "tilesets": [
     {
       "firstgid": 1,
@@ -1602,6 +1602,84 @@
           "type": "entry",
           "x": 432,
           "y": 176,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true
+        },
+        {
+          "id": 16,
+          "name": "to_rock",
+          "type": "gate",
+          "x": 448,
+          "y": 80,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "requires",
+              "type": "string",
+              "value": "jazz"
+            },
+            {
+              "name": "target",
+              "type": "string",
+              "value": "rock_route"
+            },
+            {
+              "name": "entry",
+              "type": "string",
+              "value": "from_town"
+            }
+          ]
+        },
+        {
+          "id": 17,
+          "name": "from_rock",
+          "type": "entry",
+          "x": 432,
+          "y": 80,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true
+        },
+        {
+          "id": 18,
+          "name": "to_folk",
+          "type": "gate",
+          "x": 448,
+          "y": 272,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "requires",
+              "type": "string",
+              "value": "jazz"
+            },
+            {
+              "name": "target",
+              "type": "string",
+              "value": "folk_route"
+            },
+            {
+              "name": "entry",
+              "type": "string",
+              "value": "from_town"
+            }
+          ]
+        },
+        {
+          "id": 19,
+          "name": "from_folk",
+          "type": "entry",
+          "x": 432,
+          "y": 272,
           "width": 16,
           "height": 16,
           "rotation": 0,

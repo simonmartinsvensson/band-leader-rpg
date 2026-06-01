@@ -27,6 +27,20 @@ export const ENCOUNTER_ZONES: Record<string, EncounterZone> = {
     maxLevel: 12,
     musicians: ["amplifret", "funkadel", "sonatina", "wanderlay"],
   },
+  // --- Genre-district routes (opened by residency gates from town) ---
+  // Rock Strip + Folk Riverside open after the Jazz Residency (player ~Lv9-12).
+  rock_route: {
+    rate: 0.4,
+    minLevel: 9,
+    maxLevel: 13,
+    musicians: ["rifflet", "amplifret", "voltaxe"],
+  },
+  folk_route: {
+    rate: 0.4,
+    minLevel: 9,
+    maxLevel: 13,
+    musicians: ["balladeer", "wanderlay"],
+  },
 };
 
 export function getEncounterZone(id: string): EncounterZone | undefined {

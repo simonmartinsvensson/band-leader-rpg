@@ -183,6 +183,12 @@ mkdirSync(OUT_DIR, { recursive: true });
     // Warp east to the riverside park (and on to the warehouse venue).
     obj({ name: "to_park", type: "warp", tx: 28, ty: 11, props: { target: "park", entry: "from_town" } }),
     obj({ name: "from_park", type: "entry", tx: 27, ty: 11 }),
+    // --- District gates (visible-but-locked until you earn the residency) ---
+    // Rock Strip + Folk Riverside open once you hold the Jazz Residency.
+    obj({ name: "to_rock", type: "gate", tx: 28, ty: 5, props: { requires: "jazz", target: "rock_route", entry: "from_town" } }),
+    obj({ name: "from_rock", type: "entry", tx: 27, ty: 5 }),
+    obj({ name: "to_folk", type: "gate", tx: 28, ty: 17, props: { requires: "jazz", target: "folk_route", entry: "from_town" } }),
+    obj({ name: "from_folk", type: "entry", tx: 27, ty: 17 }),
   ];
 
   const map = makeMap(W, H, [
@@ -499,3 +505,103 @@ mkdirSync(OUT_DIR, { recursive: true });
   writeFileSync(resolve(OUT_DIR, "backstage-map.json"), JSON.stringify(map, null, 2) + "\n");
   console.log(`Wrote backstage-map.json (backstage, ${W}x${H})`);
 }
+
+// =============================================================================
+// GENRE DISTRICTS — the world beyond downtown. Each district is a connecting
+// ROUTE (with its own genre encounter zone) + a town HUB (a gear stall, a local
+// or two, a rehearsal heal point, and a sign marking where the district's VENUE
+// opens in Phase 5). Districts are reached from town through a residency GATE,
+// so later ones are visible-but-locked until you earn the right residency.
+// A shared helper keeps every district the same clean shape (see CLAUDE.md).
+//
+//   town --[gate: requires residency]--> <genre>_route --> <genre>_hub --> (venue, Phase 5)
+//
+// `cfg`: { genre, routeKey, hubKey, routeFile, hubFile, zoneId, townReturnEntry,
+//          localDialogue, venueSignDialogue, flavorTint }
+function buildDistrict(cfg) {
+  // ROUTE: a path west(town) -> east(hub) through a genre encounter zone.
+  {
+    nextObjectId = 1;
+    const W = 20;
+    const H = 14;
+    const at = (x, y) => y * W + x;
+    const ground = new Array(W * H).fill(GRASS);
+    for (let x = 1; x < W - 1; x++) ground[at(x, 7)] = PATH;
+    const collision = new Array(W * H).fill(0);
+    border(collision, W, H);
+    const objects = [
+      obj({ name: "from_town", type: "entry", tx: 2, ty: 7 }),
+      obj({ name: "to_town", type: "warp", tx: 1, ty: 7, props: { target: "town", entry: cfg.townReturnEntry } }),
+      obj({ name: "from_hub", type: "entry", tx: 17, ty: 7 }),
+      obj({ name: "to_hub", type: "warp", tx: 18, ty: 7, props: { target: cfg.hubKey, entry: "from_route" } }),
+      obj({ name: `${cfg.zoneId}_zone`, type: "encounter", tx: 2, ty: 4, tw: 16, th: 7, props: { zone: cfg.zoneId } }),
+    ];
+    const map = makeMap(W, H, [
+      tileLayer(1, "ground", W, H, ground),
+      tileLayer(2, "collision", W, H, collision),
+      { id: 3, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
+    ]);
+    writeFileSync(resolve(OUT_DIR, cfg.routeFile), JSON.stringify(map, null, 2) + "\n");
+    console.log(`Wrote ${cfg.routeFile} (${cfg.routeKey}, ${W}x${H})`);
+  }
+
+  // HUB: a small plaza with a shop, a local, a rehearsal heal point, and the
+  // future-venue sign. Enter from the route (south), leave back to it.
+  {
+    nextObjectId = 1;
+    const W = 18;
+    const H = 12;
+    const at = (x, y) => y * W + x;
+    const ground = new Array(W * H).fill(GRASS);
+    for (let x = 1; x < W - 1; x++) ground[at(x, 10)] = PATH; // main street
+    for (let y = 2; y < 11; y++) ground[at(9, y)] = PATH; // plaza spine
+    const collision = new Array(W * H).fill(0);
+    border(collision, W, H);
+    const objects = [
+      obj({ name: "from_route", type: "entry", tx: 9, ty: 10 }),
+      obj({ name: "to_route", type: "warp", tx: 16, ty: 10, props: { target: cfg.routeKey, entry: "from_hub" } }),
+      // Rehearsal studio heal point (top of the spine; face it to use).
+      obj({ name: "rehearsal", type: "heal", tx: 9, ty: 2 }),
+      // The district's venue spot — a sign until Phase 5 builds the venue here.
+      obj({
+        name: `${cfg.genre}_sign`,
+        type: "npc",
+        tx: 12,
+        ty: 6,
+        props: { dialogue: cfg.venueSignDialogue, facing: "down", wander: false, tint: "#9aa0b5" },
+      }),
+      // Gear stall (shared shop) + a genre local.
+      obj({
+        name: `${cfg.genre}_shop`,
+        type: "npc",
+        tx: 4,
+        ty: 4,
+        props: { dialogue: "gear_stall", facing: "down", wander: false, tint: "#4caf50" },
+      }),
+      obj({
+        name: `${cfg.genre}_local`,
+        type: "npc",
+        tx: 14,
+        ty: 8,
+        props: { dialogue: cfg.localDialogue, facing: "left", wander: true, tint: cfg.flavorTint },
+      }),
+    ];
+    const map = makeMap(W, H, [
+      tileLayer(1, "ground", W, H, ground),
+      tileLayer(2, "collision", W, H, collision),
+      { id: 3, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
+    ]);
+    writeFileSync(resolve(OUT_DIR, cfg.hubFile), JSON.stringify(map, null, 2) + "\n");
+    console.log(`Wrote ${cfg.hubFile} (${cfg.hubKey}, ${W}x${H})`);
+  }
+}
+
+// The four new genre districts (jazz + electronic already exist as the
+// jazz_club and warehouse areas). Tints come from the genre palette.
+const DISTRICTS = [
+  { genre: "rock", routeKey: "rock_route", hubKey: "rock_hub", routeFile: "rock-route-map.json", hubFile: "rock-hub-map.json", zoneId: "rock_route", townReturnEntry: "from_rock", localDialogue: "rock_local", venueSignDialogue: "rock_venue_sign", flavorTint: "#e74c3c" },
+  { genre: "folk", routeKey: "folk_route", hubKey: "folk_hub", routeFile: "folk-route-map.json", hubFile: "folk-hub-map.json", zoneId: "folk_route", townReturnEntry: "from_folk", localDialogue: "folk_local", venueSignDialogue: "folk_venue_sign", flavorTint: "#27ae60" },
+  { genre: "funk", routeKey: "funk_route", hubKey: "funk_hub", routeFile: "funk-route-map.json", hubFile: "funk-hub-map.json", zoneId: "funk_route", townReturnEntry: "from_funk", localDialogue: "funk_local", venueSignDialogue: "funk_venue_sign", flavorTint: "#e67e22" },
+  { genre: "classical", routeKey: "classical_route", hubKey: "classical_hub", routeFile: "classical-route-map.json", hubFile: "classical-hub-map.json", zoneId: "classical_route", townReturnEntry: "from_classical", localDialogue: "classical_local", venueSignDialogue: "classical_venue_sign", flavorTint: "#f1c40f" },
+].filter((d) => ["rock", "folk"].includes(d.genre)); // funk + classical land in the next piece
+for (const d of DISTRICTS) buildDistrict(d);

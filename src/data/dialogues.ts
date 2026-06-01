@@ -78,6 +78,35 @@ export const DIALOGUES: Record<string, Dialogue> = {
     speaker: "Monocorp Rep",
     pages: ["The offer stands. It always stands.", "Enjoy the noise while it lasts."],
   },
+  // Shared gear stall used by every district hub's shop.
+  gear_stall: {
+    speaker: "Gear Stall",
+    pages: ["Stocking up, {name}? Smart."],
+    shop: ["snack", "energy_drink", "demo_tape", "hype_track"],
+  },
+  // --- District locals + future-venue signs (Phase 5 builds the venues) ---
+  rock_local: {
+    speaker: "Strip Regular",
+    pages: [
+      "Welcome to the Strip, {name}. Loudest blocks in the city - or they used to be.",
+      "Half these dives went quiet when Monocorp came through. Bring the volume back, yeah?",
+    ],
+  },
+  rock_venue_sign: {
+    speaker: "Sign",
+    pages: ['"THE AMP - dive-bar showcase."', "Stage is still being wired. Soundcheck soon."],
+  },
+  folk_local: {
+    speaker: "Riverside Busker",
+    pages: [
+      "The river carries every tune out here, {name}. Folk never really left.",
+      "A good ballad cuts through anything - even a label's noise.",
+    ],
+  },
+  folk_venue_sign: {
+    speaker: "Sign",
+    pages: ['"THE LANDING - riverside open mic."', "Opening its doors before long."],
+  },
   park_scout: {
     speaker: "Talent Scout",
     pages: [
