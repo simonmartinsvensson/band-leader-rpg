@@ -8,12 +8,13 @@ import { audioLabel } from "../systems/audioSettings";
 import type { PartyData } from "./PartyScene";
 import type { BagData } from "./BagScene";
 import type { CareerData } from "./CareerScene";
+import type { QuestData } from "./QuestScene";
 
 export interface PauseData {
   parent: string;
 }
 
-const OPTIONS = ["Save Game", "Party", "Bag", "Career", "Audio", "Resume"] as const;
+const OPTIONS = ["Save Game", "Party", "Bag", "Career", "Quests", "Audio", "Resume"] as const;
 
 /**
  * Main pause menu (overworld key Esc). Saves the game to localStorage, opens
@@ -124,6 +125,9 @@ export class PauseScene extends Phaser.Scene {
         break;
       case "Career":
         this.openSub("CareerScene", { parent: this.parent } satisfies CareerData);
+        break;
+      case "Quests":
+        this.openSub("QuestScene", { parent: this.parent } satisfies QuestData);
         break;
       case "Audio":
         audio.toggleMute(); // Confirm = mute toggle; Left/Right = volume (in update)

@@ -391,6 +391,43 @@ Second-venue targets: the warehouse guard (`rival_dex`) is Lv11–12 and the ele
 (funk) is a softer counter (the boss's Orchestron resists funk). Leveling a folk/jazz party
 without a counter is *not* enough — the beatability test enforces this.
 
+## Story, flags & scripted events
+
+A data-driven story/quest engine built on the existing `flags` registry state (so progress
+persists with the save for free — see Saving). **No story content ships yet — this is the engine;**
+add content by editing the data tables in `src/data`.
+
+- **Story flags/variables** — named booleans in the registry `"flags"` map (convention: prefix
+  story flags `story.`). `src/systems/story.ts` (pure, tested) reads/sets them and derives the
+  current objective: `setStoryFlag`/`isFlagSet`, `flagsAllow(flags, requires?, forbids?)` (the gate
+  shared by events + map objects), and `currentMilestone`/`currentObjective`/`currentChapter`/
+  `completedMilestones`/`storyComplete`.
+- **Milestones** (`src/data/story.ts`, `STORY: Milestone[]`) — an ordered list `{ id, chapter,
+  objective, flag }`. The **current objective** is the first milestone whose `flag` isn't set;
+  earlier ones read as completed. Add milestones in order; set their `flag` when achieved.
+- **Scripted events / cutscenes** (`src/data/events.ts`, `EVENTS: StoryEvent[]`) — each event has a
+  `trigger` (`enterMap` | `enterTile {x,y}` | `interact {object}`), optional `requires`/`forbids`
+  flag gates and a `once` flag (set on completion; blocks replay), and ordered `steps`. Step kinds:
+  `dialogue`, `wait`, `turn`/`walk` (actor = `"player"` or a map object's `name`), `setFlag`,
+  `giveItem`, `giveCurrency`, `battle` (`trainer` or `species`+`level`). The engine
+  `src/systems/cutscene.ts` (pure, tested) is `findEvent`/`eventEligible`/`triggerMatches` +
+  `runCutscene(steps, handlers)` — it sequences steps and delegates effects to injected handlers.
+- **Playback** — `OverworldScene` checks for an eligible event on map-enter (`create`), step
+  (`handleStepComplete`, takes precedence over warps/encounters), and NPC interaction (pre-empts
+  dialogue). It plays via `cutsceneActive` (input is frozen; cutscene-driven steps don't
+  re-trigger warps/encounters), supplying handlers that move actors (`Player.walk/turn`,
+  `NPC.walk/faceTo`), show dialogue (awaiting `DialogueScene`'s `onClose`), run battles (awaiting
+  the scene `resume`), and mutate flags/bag/currency. The `once` flag is set when the run finishes.
+- **Flag-gated map content** — any map object may carry `requires`/`forbids` props (comma-separated
+  flag lists); `buildObjects` skips it unless `flagsAllow` passes, so NPCs/warps/trainers/etc.
+  appear, disappear, or swap as the story advances.
+- **Quest log** — `QuestScene` (overlay) shows the current chapter + objective and recent completed
+  milestones, derived from `STORY` + flags. Open it from the pause menu's **Quests** entry or the
+  overworld key **`Q`**.
+
+Pure logic is unit-tested in `tests/story.test.ts` (flags/gating/progression + a full cutscene run
+through `runCutscene` with mock handlers).
+
 ## Saving & loading
 
 State persists to **localStorage** across browser refreshes.
@@ -403,8 +440,9 @@ State persists to **localStorage** across browser refreshes.
   (returns null). The store is the Phaser **registry** (which already holds the live state); the
   overworld writes its current `loc` (`{ map, x, y }`) to the registry on each step.
 - **Pause menu** (`PauseScene`, overworld key **Esc**) — its first option is **Save Game**
-  (writes localStorage). It also opens Party/Bag/Career, an **Audio** control (mute/volume — see
-  Audio), and Resume.
+  (writes localStorage). It also opens Party/Bag/Career, the **Quests** log (also overworld key
+  `Q` — see Story, flags & scripted events), an **Audio** control (mute/volume — see Audio), and
+  Resume.
 - **Boot flow** — `PreloadScene` → `TitleScene`. **Continue** loads the save, applies it to the
   registry, and starts the overworld at the saved map/tile. **New Game** clears the save + registry
   and starts `{ newGame: true }`, where the overworld auto-plays the mentor **intro** (the `intro`

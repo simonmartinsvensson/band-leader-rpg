@@ -10,6 +10,7 @@ import { PartyScene } from "./scenes/PartyScene";
 import { BagScene } from "./scenes/BagScene";
 import { ShopScene } from "./scenes/ShopScene";
 import { CareerScene } from "./scenes/CareerScene";
+import { QuestScene } from "./scenes/QuestScene";
 import { PauseScene } from "./scenes/PauseScene";
 import { initTouchControls } from "./ui/touchControls";
 import { audio } from "./systems/audio";
@@ -43,6 +44,7 @@ const config: Phaser.Types.Core.GameConfig = {
     BagScene,
     ShopScene,
     CareerScene,
+    QuestScene,
     PauseScene,
   ],
 };

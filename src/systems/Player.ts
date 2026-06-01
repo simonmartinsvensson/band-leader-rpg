@@ -97,6 +97,27 @@ export class Player {
     }
   }
 
+  /** Turn to face a direction without moving (used by scripted cutscenes). */
+  turn(direction: Direction): void {
+    this.face(direction);
+  }
+
+  /**
+   * Take one scripted step in a direction (face, then move if the tile is free),
+   * returning whether it actually moved. Like update() but callable directly by
+   * the cutscene runner; the per-frame input path still goes through update().
+   */
+  walk(direction: Direction): boolean {
+    if (this.moving) return false;
+    this.face(direction);
+    const { x: dx, y: dy } = DIRECTION_VECTORS[direction];
+    const targetX = this.gridX + dx;
+    const targetY = this.gridY + dy;
+    if (!this.canEnter(targetX, targetY)) return false;
+    this.step(targetX, targetY);
+    return true;
+  }
+
   private face(direction: Direction): void {
     this.facing = direction;
     // Use directional frames only if the sheet actually has them.

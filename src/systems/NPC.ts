@@ -12,6 +12,8 @@ const WANDER_SPREAD = 2000;
 export interface NPCConfig {
   /** Dialogue id (key into src/data/dialogues.ts). */
   id: string;
+  /** Map object name — stable handle a cutscene uses to move/turn this NPC. */
+  name?: string;
   tileX: number;
   tileY: number;
   facing: Direction;
@@ -32,6 +34,8 @@ export type WalkableQuery = (tileX: number, tileY: number) => boolean;
  */
 export class NPC {
   readonly id: string;
+  /** Map object name (cutscene handle); falls back to the dialogue id. */
+  readonly name: string;
 
   private readonly scene: Phaser.Scene;
   private readonly sprite: Phaser.GameObjects.Sprite;
@@ -47,6 +51,7 @@ export class NPC {
   constructor(scene: Phaser.Scene, config: NPCConfig, isWalkable: WalkableQuery) {
     this.scene = scene;
     this.id = config.id;
+    this.name = config.name ?? config.id;
     this.gridX = config.tileX;
     this.gridY = config.tileY;
     this.facing = config.facing;
@@ -83,9 +88,28 @@ export class NPC {
     return this.gridX === tileX && this.gridY === tileY;
   }
 
+  get isMoving(): boolean {
+    return this.moving;
+  }
+
   /** Turn to face a direction without moving (e.g. toward the player). */
   faceTo(direction: Direction): void {
     this.facing = direction;
+  }
+
+  /**
+   * Take one scripted step in a direction (face, then move if the target tile
+   * is walkable), returning whether it moved. Used by the cutscene runner.
+   */
+  walk(direction: Direction): boolean {
+    if (this.moving) return false;
+    this.facing = direction;
+    const { x: dx, y: dy } = DIRECTION_VECTORS[direction];
+    const targetX = this.gridX + dx;
+    const targetY = this.gridY + dy;
+    if (!this.isWalkable(targetX, targetY)) return false;
+    this.step(targetX, targetY);
+    return true;
   }
 
   /** Per-frame wander logic. No-op for stationary NPCs or while mid-step. */

@@ -8,6 +8,8 @@ export interface DialogueData {
   speaker?: string;
   /** Scene key to resume when the dialogue closes. */
   parent: string;
+  /** Optional callback fired once the dialogue closes (used by cutscenes). */
+  onClose?: () => void;
 }
 
 const MARGIN = 8;
@@ -26,6 +28,7 @@ export class DialogueScene extends Phaser.Scene {
   private pages: string[] = [];
   private speaker?: string;
   private parent = "OverworldScene";
+  private onClose?: () => void;
 
   private pageIndex = 0;
   private typing = false;
@@ -42,6 +45,7 @@ export class DialogueScene extends Phaser.Scene {
     this.pages = data.pages ?? [];
     this.speaker = data.speaker;
     this.parent = data.parent ?? "OverworldScene";
+    this.onClose = data.onClose;
     this.pageIndex = 0;
     this.typing = false;
   }
@@ -138,5 +142,6 @@ export class DialogueScene extends Phaser.Scene {
     this.typeTimer?.remove();
     this.scene.resume(this.parent);
     this.scene.stop();
+    this.onClose?.();
   }
 }

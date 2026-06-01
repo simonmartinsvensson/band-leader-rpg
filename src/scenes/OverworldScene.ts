@@ -21,12 +21,17 @@ import { addItem, type Bag } from "../systems/inventory";
 import { buildTrainerTeam, isTrainerDefeated, hasResidency, lineOfSight } from "../systems/career";
 import { getTrainer } from "../data/trainers";
 import { getResidency } from "../data/residencies";
+import { EVENTS } from "../data/events";
+import { flagsAllow, type Flags } from "../systems/story";
+import { findEvent, runCutscene, type CutsceneHandlers } from "../systems/cutscene";
+import type { StoryEvent, EventStep } from "../types/event";
 import type { DialogueGift } from "../data/dialogues";
 import type { BattleData } from "./BattleScene";
 import type { PartyData } from "./PartyScene";
 import type { BagData } from "./BagScene";
 import type { ShopData } from "./ShopScene";
 import type { CareerData } from "./CareerScene";
+import type { QuestData } from "./QuestScene";
 import type { PauseData } from "./PauseScene";
 import type { MusicianInstance } from "../types/musician";
 
@@ -80,6 +85,7 @@ export class OverworldScene extends Phaser.Scene {
   private partyKey!: Phaser.Input.Keyboard.Key;
   private bagKey!: Phaser.Input.Keyboard.Key;
   private careerKey!: Phaser.Input.Keyboard.Key;
+  private questKey!: Phaser.Input.Keyboard.Key;
 
   /** Current map key + the entry to spawn at (set by init from scene data). */
   private mapKey: string = MapKeys.TOWN;
@@ -98,6 +104,8 @@ export class OverworldScene extends Phaser.Scene {
   private pendingWarp: Warp | null = null;
   private pendingBattle: BattleData | null = null;
   private pendingTrainer: string | null = null;
+  private pendingEvent: StoryEvent | null = null; // scripted event queued to play
+  private cutsceneActive = false; // true while a cutscene runs (freezes input)
   private transitioning = false; // true during a warp fade-out (freezes input)
 
   constructor() {
@@ -133,6 +141,8 @@ export class OverworldScene extends Phaser.Scene {
     this.pendingWarp = null;
     this.pendingBattle = null;
     this.pendingTrainer = null;
+    this.pendingEvent = null;
+    this.cutsceneActive = false;
     this.transitioning = false;
     this.interactWasDown = false;
     this.moveInput = new MovementController();
@@ -198,6 +208,7 @@ export class OverworldScene extends Phaser.Scene {
     this.partyKey = keyboard.addKey(KC.P); // open the party menu
     this.bagKey = keyboard.addKey(KC.I); // open the bag (inventory)
     this.careerKey = keyboard.addKey(KC.C); // open the career menu
+    this.questKey = keyboard.addKey(KC.Q); // open the quest log
     this.pauseKey = keyboard.addKey(KC.ESC); // open the pause menu
 
     // New game: the mentor hands you your band and explains the goal.
@@ -206,6 +217,15 @@ export class OverworldScene extends Phaser.Scene {
       const intro = getDialogue("intro");
       if (intro) this.openDialogue(intro.pages, intro.speaker);
     }
+
+    // Scripted "enter this map" event (gated by story flags); plays on arrival.
+    const onEnter = findEvent(EVENTS, { type: "enterMap", map: this.mapKey }, this.flags());
+    if (onEnter) this.pendingEvent = onEnter;
+  }
+
+  /** The persistent story-flag bag (lives in the registry, saved with the game). */
+  private flags(): Flags {
+    return this.registry.get("flags") as Flags;
   }
 
   update(time: number): void {
@@ -241,11 +261,25 @@ export class OverworldScene extends Phaser.Scene {
       return;
     }
 
+    // A scripted event is queued: play it (freezes input until it finishes).
+    if (this.pendingEvent && !this.cutsceneActive) {
+      const event = this.pendingEvent;
+      this.pendingEvent = null;
+      this.startCutscene(event);
+      return;
+    }
+
     // Track the interact edge every frame (even while paused for dialogue) so a
     // held button can't re-trigger an interaction when the overworld resumes.
     const interactDown = this.interactKeys.some((k) => k.isDown);
     const interactPressed = interactDown && !this.interactWasDown;
     this.interactWasDown = interactDown;
+
+    // During a cutscene the player has no control; the cutscene drives actors.
+    if (this.cutsceneActive) {
+      this.hint.setVisible(false);
+      return;
+    }
 
     const intent = this.moveInput.update(this.getHeldDirections(), time);
     this.player.update(intent);
@@ -272,6 +306,11 @@ export class OverworldScene extends Phaser.Scene {
     if (Phaser.Input.Keyboard.JustDown(this.careerKey)) {
       this.scene.pause();
       this.scene.launch("CareerScene", { parent: this.scene.key } satisfies CareerData);
+    }
+    // Open the quest log.
+    if (Phaser.Input.Keyboard.JustDown(this.questKey)) {
+      this.scene.pause();
+      this.scene.launch("QuestScene", { parent: this.scene.key } satisfies QuestData);
     }
     // Open the pause menu (save / sub-menus / resume).
     if (Phaser.Input.Keyboard.JustDown(this.pauseKey)) {
@@ -321,6 +360,16 @@ export class OverworldScene extends Phaser.Scene {
   /** React to the player finishing a step: warp, trainer sight, then encounter. */
   private handleStepComplete(x: number, y: number): void {
     this.registry.set("loc", { map: this.mapKey, x, y }); // for saving
+    // Cutscene-driven steps never trigger warps/encounters/events themselves.
+    if (this.cutsceneActive) return;
+
+    // A scripted "step onto this tile" event takes precedence over warps/encounters.
+    const tileEvent = findEvent(EVENTS, { type: "enterTile", map: this.mapKey, x, y }, this.flags());
+    if (tileEvent) {
+      this.pendingEvent = tileEvent;
+      return;
+    }
+
     const warp = this.warps.get(key(x, y));
     if (warp) {
       this.pendingWarp = warp; // applied in update() to avoid restarting mid-tween
@@ -368,14 +417,21 @@ export class OverworldScene extends Phaser.Scene {
   /** Build NPCs, warps, and encounter zones from the map's objects layer. */
   private buildObjects(map: GameMap, isWalkable: (x: number, y: number) => boolean): void {
     const overlay = this.add.graphics().setDepth(1);
+    const flags = this.flags();
 
     for (const obj of map.getObjects()) {
+      // Flag-gated content: any object can carry `requires`/`forbids` flag lists
+      // (comma-separated); it's only built when the story flags satisfy them, so
+      // NPCs/warps/etc. appear, disappear, or swap as the story advances.
+      if (!flagsAllow(flags, parseFlags(obj.props.requires), parseFlags(obj.props.forbids))) continue;
+
       if (obj.type === "npc") {
         this.npcs.push(
           new NPC(
             this,
             {
               id: String(obj.props.dialogue ?? ""),
+              name: obj.name,
               tileX: obj.tileX,
               tileY: obj.tileY,
               facing: (obj.props.facing as Direction) ?? "down",
@@ -510,6 +566,14 @@ export class OverworldScene extends Phaser.Scene {
     const npc = this.npcs.find((n) => n.occupies(targetX, targetY));
     if (!npc) return;
 
+    // A scripted interact event on this NPC (gated by flags) pre-empts dialogue.
+    const event = findEvent(EVENTS, { type: "interact", map: this.mapKey, object: npc.name }, this.flags());
+    if (event) {
+      npc.faceTo(OPPOSITE[facing]);
+      this.pendingEvent = event;
+      return;
+    }
+
     const dialogue = getDialogue(npc.id);
     if (!dialogue) {
       console.warn(`No dialogue found for NPC id '${npc.id}'`);
@@ -550,6 +614,108 @@ export class OverworldScene extends Phaser.Scene {
     this.scene.launch("DialogueScene", data);
   }
 
+  // --- Scripted events (cutscenes) -------------------------------------------
+
+  /** Play a scripted event: freeze input, run its steps, then set its `once` flag. */
+  private startCutscene(event: StoryEvent): void {
+    this.cutsceneActive = true;
+    this.hint.setVisible(false);
+    runCutscene(event.steps, this.cutsceneHandlers())
+      .catch((err) => console.error("cutscene error:", err))
+      .finally(() => {
+        if (event.once) {
+          const flags = this.flags();
+          flags[event.once] = true;
+          this.registry.set("flags", flags);
+        }
+        this.cutsceneActive = false;
+      });
+  }
+
+  /** Runtime effects for the (pure) cutscene runner, bound to this scene. */
+  private cutsceneHandlers(): CutsceneHandlers {
+    return {
+      dialogue: (speaker, pages) =>
+        new Promise<void>((resolve) => {
+          this.scene.pause();
+          this.scene.launch("DialogueScene", {
+            pages,
+            speaker,
+            parent: this.scene.key,
+            onClose: resolve,
+          } satisfies DialogueData);
+        }),
+      wait: (ms) => new Promise<void>((resolve) => void this.time.delayedCall(ms, resolve)),
+      turn: (actor, facing) => {
+        if (actor === "player") this.player.turn(facing);
+        else this.npcByName(actor)?.faceTo(facing);
+      },
+      walk: (actor, path) => this.walkActor(actor, path),
+      battle: (step) => this.cutsceneBattle(step),
+      setFlag: (flag, value) => {
+        const flags = this.flags();
+        flags[flag] = value;
+        this.registry.set("flags", flags);
+      },
+      giveItem: (item, qty) => addItem(this.registry.get("bag") as Bag, item, qty),
+      giveCurrency: (amount) => this.registry.set("currency", (this.registry.get("currency") ?? 0) + amount),
+    };
+  }
+
+  private npcByName(name: string): NPC | undefined {
+    return this.npcs.find((n) => n.name === name);
+  }
+
+  /** Walk an actor (player or a named NPC) one tile at a time along a path. */
+  private async walkActor(actor: string, path: Direction[]): Promise<void> {
+    const mover = actor === "player" ? this.player : this.npcByName(actor);
+    if (!mover) return;
+    for (const dir of path) {
+      mover.walk(dir);
+      await this.waitForIdle(mover);
+    }
+  }
+
+  /** Resolve once the actor's current step tween has finished. */
+  private waitForIdle(mover: { isMoving: boolean }): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const poll = this.time.addEvent({
+        delay: 16,
+        loop: true,
+        callback: () => {
+          if (!mover.isMoving) {
+            poll.remove();
+            resolve();
+          }
+        },
+      });
+    });
+  }
+
+  /** Start a scripted battle (trainer or wild) and resolve when it ends. */
+  private cutsceneBattle(step: Extract<EventStep, { kind: "battle" }>): Promise<void> {
+    return new Promise<void>((resolve) => {
+      let opponents: MusicianInstance[] = [];
+      let trainer: BattleData["trainer"];
+      if (step.trainer) {
+        const t = getTrainer(step.trainer);
+        if (t) {
+          opponents = buildTrainerTeam(t);
+          trainer = { id: t.id, name: t.name, reward: t.reward, residency: t.residency, defeatLine: t.defeatLine };
+        }
+      } else if (step.species) {
+        const species = getSpecies(step.species);
+        if (species) opponents = [createInstance(species, step.level ?? 5)];
+      }
+      if (opponents.length === 0) {
+        resolve();
+        return;
+      }
+      this.events.once(Phaser.Scenes.Events.RESUME, resolve); // battle resumes us on exit
+      this.startBattle({ party: this.party(), opponents, parent: this.scene.key, trainer });
+    });
+  }
+
   /**
    * All direction keys currently held (arrows + WASD). Order is irrelevant —
    * MovementController tracks press recency and resolves last-pressed-wins.
@@ -567,6 +733,15 @@ export class OverworldScene extends Phaser.Scene {
 /** Map-tile key for the warp/encounter lookups. */
 function key(x: number, y: number): string {
   return `${x},${y}`;
+}
+
+/** Parse a comma-separated flag list from a map-object property ("a,b" -> ["a","b"]). */
+function parseFlags(value: string | number | boolean | undefined): string[] {
+  if (typeof value !== "string") return [];
+  return value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 /** Tiled stores tints as "#rrggbb"; convert to a Phaser numeric color. */
