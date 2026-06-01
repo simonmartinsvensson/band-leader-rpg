@@ -51,13 +51,14 @@ interface Step {
   delay?: number;
 }
 
-const COMMANDS = ["Perform", "Recruit", "Bag", "Run"] as const;
-// 2x2 command layout inside the bottom box.
+const COMMANDS = ["Perform", "Switch", "Recruit", "Bag", "Run"] as const;
+// 2-column layout inside the bottom box (rows of 2).
 const COMMAND_POS = [
-  { x: 130, y: 124 },
-  { x: 188, y: 124 },
-  { x: 130, y: 140 },
-  { x: 188, y: 140 },
+  { x: 130, y: 122 },
+  { x: 188, y: 122 },
+  { x: 130, y: 134 },
+  { x: 188, y: 134 },
+  { x: 130, y: 146 },
 ];
 // Single-column technique list (left side of the box).
 const TECH_POS = [
@@ -95,6 +96,7 @@ export class BattleScene extends Phaser.Scene {
   private techIndex = 0;
   private techniqueIds: string[] = [];
   private switchOptions: number[] = []; // party indices selectable when switching
+  private switchVoluntary = false; // true = chosen from the menu (uses the turn)
   private bagItems: string[] = []; // item ids selectable in the bag
 
   private hpBars!: Record<Side, Phaser.GameObjects.Graphics>;
@@ -273,16 +275,20 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private handleCommandInput(): void {
+    const last = COMMANDS.length - 1;
     if (this.pressed("left") && this.commandIndex % 2 === 1) this.commandIndex--;
-    else if (this.pressed("right") && this.commandIndex % 2 === 0) this.commandIndex++;
+    else if (this.pressed("right") && this.commandIndex % 2 === 0 && this.commandIndex < last) this.commandIndex++;
     else if (this.pressed("up") && this.commandIndex >= 2) this.commandIndex -= 2;
-    else if (this.pressed("down") && this.commandIndex < 2) this.commandIndex += 2;
+    else if (this.pressed("down") && this.commandIndex + 2 <= last) this.commandIndex += 2;
     this.moveCommandCursor();
 
     if (!this.pressed("confirm")) return;
     switch (COMMANDS[this.commandIndex]) {
       case "Perform":
         this.enterTechnique();
+        break;
+      case "Switch":
+        this.tryVoluntarySwitch();
         break;
       case "Recruit":
         if (this.trainer) this.runMessages(["You can't recruit a rival's musician!"], () => this.enterCommand());
@@ -296,6 +302,18 @@ export class BattleScene extends Phaser.Scene {
         else this.doRun();
         break;
     }
+  }
+
+  /** Voluntary mid-battle switch (uses the turn). No reserve -> a message. */
+  private tryVoluntarySwitch(): void {
+    this.switchOptions = this.party
+      .map((_, i) => i)
+      .filter((i) => i !== this.activeIndex && this.party[i].currentStamina > 0);
+    if (this.switchOptions.length === 0) {
+      this.runMessages(["No one else can take the stage!"], () => this.enterCommand());
+      return;
+    }
+    this.enterSwitch(true);
   }
 
   private enterTechnique(): void {
@@ -352,8 +370,9 @@ export class BattleScene extends Phaser.Scene {
 
   // --- Forced switch (active musician fainted) -------------------------------
 
-  private enterSwitch(): void {
+  private enterSwitch(voluntary = false): void {
     this.phase = "switch";
+    this.switchVoluntary = voluntary;
     this.techIndex = 0;
     this.message.setVisible(false);
     this.commandTexts.forEach((t) => t.setVisible(false));
@@ -368,12 +387,16 @@ export class BattleScene extends Phaser.Scene {
       t.setText(`${m.nickname} Lv${m.level} (${m.currentStamina}/${m.stats.stamina})`);
       t.setVisible(true);
     });
-    this.prompt.setPosition(150, 122).setText("Choose!").setVisible(true);
+    this.prompt.setPosition(150, 122).setText(voluntary ? "Esc: Back" : "Choose!").setVisible(true);
     this.moveTechCursor();
     this.cursor.setVisible(true);
   }
 
   private handleSwitchInput(): void {
+    if (this.switchVoluntary && this.pressed("cancel")) {
+      this.enterCommand();
+      return;
+    }
     const count = Math.min(this.switchOptions.length, TECH_POS.length);
     if (this.pressed("up") && this.techIndex > 0) this.techIndex--;
     else if (this.pressed("down") && this.techIndex + 1 < count) this.techIndex++;
@@ -382,6 +405,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private doSwitch(partyIndex: number): void {
+    const voluntary = this.switchVoluntary;
     this.activeIndex = partyIndex;
     const inst = this.party[partyIndex];
     this.battle.player = makeBattler(inst);
@@ -390,7 +414,9 @@ export class BattleScene extends Phaser.Scene {
     this.sprites.player.setAlpha(1).setTint(genreColor(this.battle.player.genres[0]));
     this.playerName.setText(`${inst.nickname}  Lv${inst.level}`);
     this.refreshHp("player");
-    this.runMessages([`Go, ${inst.nickname}!`], () => this.enterCommand());
+    // A voluntary switch spends the turn — the opponent gets to act. A forced
+    // switch (after a faint) resumes the player's command on the new turn.
+    this.runMessages([`Go, ${inst.nickname}!`], () => (voluntary ? this.opponentCounter() : this.enterCommand()));
   }
 
   // --- Bag / recruiting ------------------------------------------------------

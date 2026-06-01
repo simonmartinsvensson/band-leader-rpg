@@ -40,7 +40,10 @@ const assert = (cond, msg) => {
 
 try {
   await page.goto(URL, { waitUntil: "load" });
-  // New game auto-plays an intro dialogue (overworld paused) — dismiss it first.
+  // Boot lands on the title screen — start a new game (fresh context = no save).
+  await page.waitForFunction(() => globalThis.__GAME__?.scene.isActive("TitleScene"), undefined, { timeout: 10000 });
+  await tap("Space", 1); // New Game
+  // New game auto-plays an intro dialogue (overworld paused) — dismiss it next.
   await page.waitForFunction(
     () => globalThis.__GAME__?.scene.isActive("OverworldScene") || globalThis.__GAME__?.scene.isActive("DialogueScene"),
     undefined,

@@ -37,3 +37,23 @@ export function swapMembers(party: MusicianInstance[], i: number, j: number): vo
   party[i] = party[j];
   party[j] = tmp;
 }
+
+/** A slot in either the party or the roster list. */
+export interface Slot {
+  fromRoster: boolean;
+  index: number;
+}
+
+/**
+ * Swap two members across (or within) the party and roster arrays. Used by the
+ * party UI to bench an active musician or call one up from the roster. Sizes are
+ * preserved (it's an exchange), so the party never empties or overflows.
+ */
+export function swapSlots(party: MusicianInstance[], roster: MusicianInstance[], a: Slot, b: Slot): void {
+  const arrA = a.fromRoster ? roster : party;
+  const arrB = b.fromRoster ? roster : party;
+  if (a.index < 0 || b.index < 0 || a.index >= arrA.length || b.index >= arrB.length) return;
+  const tmp = arrA[a.index];
+  arrA[a.index] = arrB[b.index];
+  arrB[b.index] = tmp;
+}

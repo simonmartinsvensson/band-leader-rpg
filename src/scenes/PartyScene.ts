@@ -4,26 +4,35 @@ import { createText } from "../ui/text";
 import { getSpecies } from "../data/species";
 import { getTechnique } from "../data/techniques";
 import { GENRES } from "../data/genres";
-import { swapMembers } from "../systems/party";
+import { swapSlots, type Slot } from "../systems/party";
 import type { MusicianInstance } from "../types/musician";
 
 export interface PartyData {
   parent: string;
 }
 
+const ROW_H = 11;
+const TOP = 22;
+
 /**
- * Party management overlay: lists members with level + stamina, shows the
- * highlighted member's stats and techniques live, and supports reordering
- * (Confirm to grab, Confirm again to drop/swap). Reads the party from the
- * game registry so changes persist. Esc exits back to the parent scene.
+ * Party + roster management overlay. Lists the active party and the roster
+ * (musicians recruited beyond the 6-slot party). Confirm grabs a member, Confirm
+ * again swaps it with another slot — including swapping a roster member into the
+ * party and back. Shows the highlighted member's stats/techniques live. Reads
+ * party + roster from the registry so changes persist. Esc exits.
  */
 export class PartyScene extends Phaser.Scene {
   private parent = "OverworldScene";
   private party: MusicianInstance[] = [];
+  private roster: MusicianInstance[] = [];
   private index = 0;
   private heldIndex = -1;
 
+  /** Combined party-then-roster slots; the rendered list maps 1:1 to these. */
+  private slots: Slot[] = [];
+
   private rowTexts: Phaser.GameObjects.BitmapText[] = [];
+  private divider!: Phaser.GameObjects.BitmapText;
   private cursor!: Phaser.GameObjects.BitmapText;
   private detail!: Phaser.GameObjects.BitmapText;
 
@@ -41,19 +50,25 @@ export class PartyScene extends Phaser.Scene {
   init(data: PartyData): void {
     this.parent = data?.parent ?? "OverworldScene";
     this.party = this.registry.get("party") ?? [];
+    this.roster = this.registry.get("roster") ?? [];
     this.index = 0;
     this.heldIndex = -1;
   }
 
   create(): void {
     this.add.graphics().fillStyle(0x0b0b12, 0.96).fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    createText(this, 8, 6, "PARTY", { color: 0xffd54f });
+    createText(this, 8, 6, "PARTY & ROSTER", { color: 0xffd54f });
     this.add.graphics().lineStyle(1, 0xffffff, 0.5).strokeRect(4, 18, 118, 116).strokeRect(126, 18, 110, 116);
 
-    this.rowTexts = this.party.map((_, i) => createText(this, 16, 24 + i * 14, ""));
-    this.cursor = createText(this, 8, 24, ">");
-    this.detail = createText(this, 130, 22, "", { maxWidth: 104 });
+    this.slots = [
+      ...this.party.map((_, i): Slot => ({ fromRoster: false, index: i })),
+      ...this.roster.map((_, i): Slot => ({ fromRoster: true, index: i })),
+    ];
 
+    this.rowTexts = this.slots.map(() => createText(this, 16, 0, ""));
+    this.divider = createText(this, 10, 0, "- roster -", { color: 0x8b8b9b }).setVisible(this.roster.length > 0);
+    this.cursor = createText(this, 8, 0, ">");
+    this.detail = createText(this, 130, TOP, "", { maxWidth: 104 });
     createText(this, 8, GAME_HEIGHT - 10, "Up/Down  Space:grab/swap  Esc:exit", { color: 0x8b8b9b });
 
     const kb = this.input.keyboard!;
@@ -71,12 +86,12 @@ export class PartyScene extends Phaser.Scene {
 
   update(): void {
     if (this.pressed("up") && this.index > 0) this.index--;
-    else if (this.pressed("down") && this.index < this.party.length - 1) this.index++;
+    else if (this.pressed("down") && this.index < this.slots.length - 1) this.index++;
 
     if (this.pressed("confirm")) {
       if (this.heldIndex < 0) this.heldIndex = this.index;
       else {
-        swapMembers(this.party, this.heldIndex, this.index);
+        swapSlots(this.party, this.roster, this.slots[this.heldIndex], this.slots[this.index]);
         this.heldIndex = -1;
       }
     } else if (this.pressed("cancel")) {
@@ -91,21 +106,40 @@ export class PartyScene extends Phaser.Scene {
     this.refresh();
   }
 
-  private refresh(): void {
-    this.party.forEach((m, i) => {
-      this.rowTexts[i].setText(`${m.nickname} L${m.level} ${m.currentStamina}/${m.stats.stamina}`);
-      this.rowTexts[i].setTint(i === this.heldIndex ? 0xffd54f : 0xffffff); // grabbed = yellow
-    });
-    this.cursor.setY(24 + this.index * 14);
+  /** Member currently shown in slot `i` (which array it lives in is positional). */
+  private memberAt(i: number): MusicianInstance | undefined {
+    const slot = this.slots[i];
+    return slot.fromRoster ? this.roster[slot.index] : this.party[slot.index];
+  }
 
-    const m = this.party[this.index];
+  /** Y of a slot row, accounting for the roster divider line. */
+  private rowY(i: number): number {
+    const beforeDivider = i < this.party.length ? 0 : ROW_H; // gap for the divider
+    return TOP + i * ROW_H + beforeDivider;
+  }
+
+  private refresh(): void {
+    this.slots.forEach((_, i) => {
+      const m = this.memberAt(i);
+      if (!m) return;
+      const t = this.rowTexts[i];
+      t.setPosition(16, this.rowY(i));
+      t.setText(`${m.nickname} L${m.level} ${m.currentStamina}/${m.stats.stamina}`);
+      const benched = this.slots[i].fromRoster;
+      t.setTint(i === this.heldIndex ? 0xffd54f : benched ? 0x9aa0b5 : 0xffffff);
+    });
+    if (this.roster.length > 0) this.divider.setY(TOP + this.party.length * ROW_H + 1);
+    this.cursor.setY(this.rowY(this.index));
+
+    const m = this.memberAt(this.index);
     if (!m) return;
     const species = getSpecies(m.speciesId);
     const genres = species ? species.genres.map((g) => GENRES[g].name).join(" / ") : "";
     const techs = m.techniques.map((id) => getTechnique(id)?.name ?? id).join("\n  ");
+    const where = this.slots[this.index].fromRoster ? "(roster)" : this.slots[this.index].index === 0 ? "(active lead)" : "(party)";
     this.detail.setText(
       [
-        `${m.nickname}`,
+        `${m.nickname} ${where}`,
         `Lv ${m.level}  (${genres})`,
         "",
         `STA ${m.currentStamina}/${m.stats.stamina}`,

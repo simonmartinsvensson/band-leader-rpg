@@ -57,18 +57,20 @@ add a data entry — do not write bespoke logic per item.
 ## Scene flow
 
 ```
-BootScene  ──▶  PreloadScene  ──▶  OverworldScene  ◀──overlay──▶  DialogueScene
-                                                   ◀──overlay──▶  BattleScene
-                                                   ◀──overlay──▶  PartyScene
-                                                   ◀──overlay──▶  BagScene / ShopScene
-                                                   ◀──overlay──▶  CareerScene
-                                                   ◀──overlay──▶  PauseScene (Esc; save/menu)
+BootScene  ──▶  PreloadScene  ──▶  TitleScene  ──▶  OverworldScene  ◀──overlay──▶  DialogueScene
+                                                                    ◀──overlay──▶  BattleScene
+                                                                    ◀──overlay──▶  PartyScene
+                                                                    ◀──overlay──▶  BagScene / ShopScene
+                                                                    ◀──overlay──▶  CareerScene
+                                                                    ◀──overlay──▶  PauseScene (Esc)
 ```
 
 - **BootScene** — early synchronous setup; logs `"boot"`, then starts PreloadScene. No
   asset loading here.
 - **PreloadScene** — loads every asset (keys from `src/data/assets.ts`) while showing a
-  loading bar, then starts OverworldScene.
+  loading bar, then starts TitleScene.
+- **TitleScene** — the start menu: **Continue** (only if a save exists) resumes from localStorage;
+  **New Game** (after a confirm if a save exists) wipes the save + registry and starts the intro.
 - **OverworldScene** — loads a Tiled map (by key), spawns the player + NPCs, blocks the player
   against collision tiles and NPCs, follows the player with a clamped camera, opens NPC dialogue
   on the interact button, warps between maps on warp tiles, and rolls random encounters in
@@ -246,8 +248,9 @@ Add musicians/genres/techniques by editing the data tables — no per-item logic
   / `fled`. **Stamina is the HP pool** here (damage depletes it; faint at ≤ 0); technique
   `staminaCost` is reserved for a future energy system (not consumed yet).
 - **`BattleScene`** — layout: opponent top-right (+ info top-left), player bottom-left (+ info
-  bottom-right), an HP bar each, a command menu (Perform / Recruit / Bag / Run) and a technique
-  submenu. It collects the player's action, calls `resolveTurn` (opponent action from the AI),
+  bottom-right), an HP bar each, a command menu (Perform / **Switch** / Recruit / Bag / Run) and a
+  technique submenu. **Switch** swaps in a reserve mid-battle and spends the turn (the opponent
+  then acts), like the forced switch after a faint but voluntary. It collects the player's action, calls `resolveTurn` (opponent action from the AI),
   then plays the events back as paced messages + HP-bar updates. Effectiveness feedback:
   "It's a showstopper!" (super) / "It falls flat..." (not very). Recruit/Bag run auditions
   (see Recruiting & encounters); progression/party handling on win/faint is below.
@@ -271,9 +274,10 @@ Add musicians/genres/techniques by editing the data tables — no per-item logic
   faints (engine outcome `player_lost`), if a reserve is alive it prompts an in-battle switch
   menu; only if **all** have fainted is the battle truly lost → the party is healed and the
   player is sent to the **studio** (`scene.start("OverworldScene", { map: "studio", ... })`).
-- **Party menu** (`PartyScene`, overlay, key **`P`**) — lists members with level + stamina,
-  shows the highlighted member's stats + techniques live, and reorders via Confirm (grab) →
-  Confirm (drop/swap); Esc exits. Reads/mutates the registry party.
+- **Party + roster menu** (`PartyScene`, overlay, key **`P`**) — lists the active party *and* the
+  roster (recruits beyond the 6-slot party), shows the highlighted member's stats + techniques
+  live, and reorders via Confirm (grab) → Confirm (drop/swap). The swap works **across** party and
+  roster (`swapSlots` in `party.ts`), so you can bench a member or call one up; Esc exits.
 - **Rehearsal studio heal** — the `studio` map has a `heal`-type object (a blocking "stage" the
   player faces). Interacting calls `healParty` (restores all stamina to full) and shows a
   dialogue. `party.ts` provides `healParty`, `firstAliveIndex`, `isPartyDefeated`, `swapMembers`.
@@ -319,7 +323,8 @@ Add musicians/genres/techniques by editing the data tables — no per-item logic
     on a chosen party member (restore stamina).
 - **Acquiring items** — dialogue NPCs can grant items/currency: a `Dialogue` may carry a `gift`
   (`{ items?, currency?, once }`, applied via `applyGift`, `once` flagged so it's one-time) or a
-  `shop` (item ids). A shop NPC opens **`ShopScene`** (overlay) to buy items with currency.
+  `shop` (item ids). A shop NPC opens **`ShopScene`** (overlay): a Buy / Sell / Leave menu — **Buy**
+  spends currency on the shop's wares, **Sell** trades bag items back at half price (`SELL_RATE`).
   Town has a **roadie** (gift, just left of spawn) and a **shopkeeper** (shop, a few tiles right).
 
 ## Venues, trainers & residencies
@@ -383,10 +388,12 @@ State persists to **localStorage** across browser refreshes.
   overworld writes its current `loc` (`{ map, x, y }`) to the registry on each step.
 - **Pause menu** (`PauseScene`, overworld key **Esc**) — its first option is **Save Game**
   (writes localStorage). It also opens Party/Bag/Career and Resume.
-- **Boot flow** — `PreloadScene` auto-loads on start: if a save exists it applies it to the
-  registry and starts the overworld at the saved map/tile; otherwise it starts a **new game**
-  (`{ newGame: true }`), where the overworld auto-plays the mentor **intro** (the `intro`
+- **Boot flow** — `PreloadScene` → `TitleScene`. **Continue** loads the save, applies it to the
+  registry, and starts the overworld at the saved map/tile. **New Game** clears the save + registry
+  and starts `{ newGame: true }`, where the overworld auto-plays the mentor **intro** (the `intro`
   dialogue — gives the starter band + explains the goal). The intro never replays on a loaded game.
+- **Interaction hint** — `OverworldScene` shows a "!" over the player when it's idle and facing an
+  interactable (NPC, trainer, heal point, or gate), via `updateHint` / `isInteractableAt`.
 
 ## Touch / mobile controls
 

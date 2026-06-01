@@ -4,6 +4,7 @@ import { Player } from "../systems/Player";
 import { GameMap } from "../systems/GameMap";
 import { NPC } from "../systems/NPC";
 import { MovementController } from "../systems/MovementController";
+import { createText } from "../ui/text";
 import { rollEncounter } from "../systems/encounters";
 import { DIRECTION_VECTORS, OPPOSITE, type Direction } from "../types/direction";
 import type { WorldGrid } from "../types/grid";
@@ -84,6 +85,7 @@ export class OverworldScene extends Phaser.Scene {
   private spawnTile: { x: number; y: number } | null = null;
   private newGame = false;
   private pauseKey!: Phaser.Input.Keyboard.Key;
+  private hint!: Phaser.GameObjects.BitmapText; // "!" over the player when facing an interactable
 
   private readonly warps = new Map<string, Warp>(); // "x,y" -> warp
   private readonly encounterTiles = new Map<string, string>(); // "x,y" -> zone id
@@ -153,6 +155,7 @@ export class OverworldScene extends Phaser.Scene {
     this.player = new Player(this, spawn.x, spawn.y, world);
     this.player.onStepComplete = (x, y) => this.handleStepComplete(x, y);
     this.registry.set("loc", { map: this.mapKey, x: spawn.x, y: spawn.y });
+    this.hint = createText(this, 0, 0, "!", { color: 0xffd54f, origin: 0.5 }).setDepth(20).setVisible(false);
 
     const camera = this.cameras.main;
     camera.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
@@ -215,6 +218,7 @@ export class OverworldScene extends Phaser.Scene {
     const intent = this.moveInput.update(this.getHeldDirections(), time);
     this.player.update(intent);
     for (const npc of this.npcs) npc.update(time);
+    this.updateHint();
 
     if (interactPressed && !this.player.isMoving) this.tryInteract();
 
@@ -401,6 +405,30 @@ export class OverworldScene extends Phaser.Scene {
           .fillStyle(0x8e44ad, 0.5)
           .fillRect(obj.tileX * TILE_SIZE, obj.tileY * TILE_SIZE, TILE_SIZE, TILE_SIZE);
       }
+    }
+  }
+
+  /** True if the tile holds something the interact button would act on. */
+  private isInteractableAt(x: number, y: number): boolean {
+    return (
+      this.npcs.some((n) => n.occupies(x, y)) ||
+      this.trainers.some((t) => t.npc.occupies(x, y)) ||
+      this.healTiles.has(key(x, y)) ||
+      this.gateTiles.has(key(x, y))
+    );
+  }
+
+  /** Show a "!" over the player when it faces an interactable (and is idle). */
+  private updateHint(): void {
+    if (this.player.isMoving) {
+      this.hint.setVisible(false);
+      return;
+    }
+    const { x: dx, y: dy } = DIRECTION_VECTORS[this.player.direction];
+    const facing = this.isInteractableAt(this.player.tileX + dx, this.player.tileY + dy);
+    this.hint.setVisible(facing);
+    if (facing) {
+      this.hint.setPosition(Math.round(this.player.gameObject.x), Math.round(this.player.gameObject.y - 18));
     }
   }
 

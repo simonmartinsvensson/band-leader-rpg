@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT, BACKGROUND_COLOR } from "./data/constants";
 import { BootScene } from "./scenes/BootScene";
 import { PreloadScene } from "./scenes/PreloadScene";
+import { TitleScene } from "./scenes/TitleScene";
 import { OverworldScene } from "./scenes/OverworldScene";
 import { DialogueScene } from "./scenes/DialogueScene";
 import { BattleScene } from "./scenes/BattleScene";
@@ -32,6 +33,7 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [
     BootScene,
     PreloadScene,
+    TitleScene,
     OverworldScene,
     DialogueScene,
     BattleScene,

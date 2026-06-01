@@ -6,6 +6,7 @@ import {
   isPartyDefeated,
   firstAliveIndex,
   swapMembers,
+  swapSlots,
 } from "../src/systems/party";
 import { createInstance, computeStats, xpForLevel } from "../src/systems/stats";
 import { SPECIES } from "../src/data/species";
@@ -89,5 +90,22 @@ describe("party helpers", () => {
     swapMembers(party, 0, 1);
     expect(party[0]).toBe(b);
     expect(party[1]).toBe(a);
+  });
+
+  it("swaps members between the party and the roster (and within each)", () => {
+    const party = createStarterParty(); // [rifflet, crooner]
+    const benched = createInstance(SPECIES.balladeer, 9);
+    const roster = [benched];
+
+    // Call the roster member up into the active lead slot.
+    swapSlots(party, roster, { fromRoster: true, index: 0 }, { fromRoster: false, index: 0 });
+    expect(party[0]).toBe(benched);
+    expect(roster[0].speciesId).toBe("rifflet"); // the lead got benched
+    expect(party.length).toBe(2); // sizes preserved
+
+    // A within-party swap still works through the same helper.
+    const lead = party[0];
+    swapSlots(party, roster, { fromRoster: false, index: 0 }, { fromRoster: false, index: 1 });
+    expect(party[1]).toBe(lead);
   });
 });
