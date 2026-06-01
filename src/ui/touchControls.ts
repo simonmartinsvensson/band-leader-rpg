@@ -3,8 +3,17 @@
 // (arrows for the D-pad, Space for A, Escape for B), so movement, dialogue,
 // battle menus, and every overlay work via touch unchanged.
 //
-// Shown only on touch devices (or with ?touch for testing); a "rotate" hint
-// covers the screen in portrait since the game prefers landscape.
+// Layout (toggled purely by CSS @media orientation):
+//   • Portrait  — handheld-emulator style: the game canvas sits in a 3:2 box
+//     pinned to the top of the screen (fit to width), and the controls live in
+//     a dedicated panel filling the space below it (D-pad lower-left, A/B
+//     lower-right). The clusters are sized against the panel height so they can
+//     never overlap the game.
+//   • Landscape — the game fills the screen and the controls overlay the lower
+//     corners (the original look). This is a fallback; portrait is fully
+//     supported and never blocked.
+//
+// Shown only on touch devices (or with ?touch for testing).
 
 interface Btn {
   label: string;
@@ -80,23 +89,43 @@ function touchEnabled(): boolean {
 const STYLE = `
   .tc-root { position: fixed; inset: 0; z-index: 1000; pointer-events: none;
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+  /* Cluster boxes: D-pad lower-left, A/B lower-right. Buttons are positioned
+     relative to their cluster, so we only move the clusters per orientation. */
+  .tc-cluster { position: absolute; pointer-events: none; }
+  .tc-dpad    { width: 44vmin; height: 44vmin; left: 4vmin; bottom: 4vmin; }
+  .tc-actions { width: 40vmin; height: 34vmin; right: 4vmin; bottom: 7vmin; }
+
   .tc-btn { pointer-events: auto; position: absolute; display: flex; align-items: center;
     justify-content: center; border: 2px solid rgba(255,255,255,0.5);
     background: rgba(20,20,30,0.45); color: #fff; font-family: monospace; font-weight: bold;
-    border-radius: 50%; -webkit-tap-highlight-color: transparent; touch-action: none; padding: 0; }
+    -webkit-tap-highlight-color: transparent; touch-action: none; padding: 0; }
   .tc-btn.tc-active { background: rgba(255,213,79,0.6); }
-  /* D-pad (lower-left) */
-  .tc-up    { width: 15vmin; height: 15vmin; left: 19vmin; bottom: 34vmin; border-radius: 18%; }
-  .tc-down  { width: 15vmin; height: 15vmin; left: 19vmin; bottom: 4vmin;  border-radius: 18%; }
-  .tc-left  { width: 15vmin; height: 15vmin; left: 4vmin;  bottom: 19vmin; border-radius: 18%; }
-  .tc-right { width: 15vmin; height: 15vmin; left: 34vmin; bottom: 19vmin; border-radius: 18%; }
-  /* A / B (lower-right) */
-  .tc-a { width: 17vmin; height: 17vmin; right: 5vmin;  bottom: 8vmin;  font-size: 6vmin; }
-  .tc-b { width: 15vmin; height: 15vmin; right: 22vmin; bottom: 20vmin; font-size: 5vmin; }
-  .tc-rotate { position: fixed; inset: 0; z-index: 2000; display: none;
-    align-items: center; justify-content: center; text-align: center;
-    background: #0b0b12; color: #fff; font-family: monospace; font-size: 5vmin; padding: 8vmin; }
-  .tc-rotate.show { display: flex; }
+
+  /* D-pad cross (sizes/positions are % of .tc-dpad). */
+  .tc-up, .tc-down, .tc-left, .tc-right { width: 34%; height: 34%; border-radius: 18%; font-size: 4.5vmin; }
+  .tc-up    { top: 0;    left: 33%; }
+  .tc-down  { bottom: 0; left: 33%; }
+  .tc-left  { left: 0;   top: 33%; }
+  .tc-right { right: 0;  top: 33%; }
+
+  /* A / B (sizes/positions are % of .tc-actions): A lower-right, B upper-left. */
+  .tc-a { right: 0; bottom: 0; width: 45%; height: 53%; border-radius: 50%; font-size: 6vmin; }
+  .tc-b { left: 0;  top: 0;    width: 39%; height: 46%; border-radius: 50%; font-size: 5vmin; }
+
+  /* Portrait: game in a 3:2 box at the top (fit to width), controls in the
+     panel below. The clusters are vertically centered in the panel and capped
+     to its height so they can never reach up into the game screen. */
+  @media (orientation: portrait) {
+    :root { --game-h: min(66.67vw, 64vh); --panel-h: calc(100vh - var(--game-h)); }
+    #game { position: fixed; top: 0; left: 0; width: 100vw; height: var(--game-h); }
+    .tc-root { top: var(--game-h); background: linear-gradient(#15151f, #0b0b12);
+      border-top: 2px solid rgba(255,255,255,0.12); }
+    .tc-cluster { bottom: auto; top: calc(var(--panel-h) / 2); transform: translateY(-50%); }
+    .tc-dpad    { --c: min(44vmin, calc(var(--panel-h) * 0.72)); width: var(--c); height: var(--c); left: 6vmin; }
+    .tc-actions { width: min(40vmin, calc(var(--panel-h) * 0.66)); height: min(34vmin, calc(var(--panel-h) * 0.56));
+      right: 6vmin; }
+  }
 `;
 
 /** Build and wire the touch overlay. No-op on non-touch devices. */
@@ -109,22 +138,17 @@ export function initTouchControls(): void {
 
   const root = document.createElement("div");
   root.className = "tc-root";
-  for (const b of [UP, DOWN, LEFT, RIGHT, B, A]) root.appendChild(makeButton(b));
+
+  const dpad = document.createElement("div");
+  dpad.className = "tc-cluster tc-dpad";
+  for (const b of [UP, DOWN, LEFT, RIGHT]) dpad.appendChild(makeButton(b));
+
+  const actions = document.createElement("div");
+  actions.className = "tc-cluster tc-actions";
+  for (const b of [B, A]) actions.appendChild(makeButton(b));
+
+  root.append(dpad, actions);
   document.body.appendChild(root);
-
-  const rotate = document.createElement("div");
-  rotate.className = "tc-rotate";
-  rotate.textContent = "Rotate your device to landscape to play.";
-  document.body.appendChild(rotate);
-
-  const updateOrientation = () => {
-    const portrait = window.innerHeight > window.innerWidth;
-    rotate.classList.toggle("show", portrait);
-    root.style.display = portrait ? "none" : "block"; // hide controls behind the hint
-  };
-  updateOrientation();
-  window.addEventListener("resize", updateOrientation);
-  window.addEventListener("orientationchange", updateOrientation);
 
   // Block native gestures (scroll, double-tap zoom, long-press callout).
   document.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });

@@ -426,9 +426,18 @@ input rewrites:
   before dispatch. Hold a D-pad button to walk (it's `isDown`-based, like the keyboard).
 - Shown only on touch devices (`maxTouchPoints`/`ontouchstart`/`pointer: coarse`) — or force with
   `?touch` for testing on desktop. The overlay is plain DOM over the canvas (`z-index` above it).
-- **Orientation**: the game prefers landscape; in portrait a "rotate your device" hint covers the
-  screen and the controls hide. Phaser's `Scale.FIT` + `CENTER_BOTH` fills the viewport in either
-  orientation while keeping pixel art crisp (canvas `image-rendering: pixelated`).
+  The buttons live in two cluster boxes (`.tc-dpad`, `.tc-actions`); the buttons are positioned
+  relative to their cluster, so only the clusters move between orientations.
+- **Orientation** (CSS `@media` only — both are fully supported, neither is forced):
+  - **Portrait** (handheld-emulator style, the default-friendly layout): the `#game` box is pinned
+    to the top in a 3:2 frame fitted to the screen width (`height: min(66.67vw, 64vh)`), and
+    `.tc-root` becomes a control **panel** filling the space below it. The two clusters are
+    vertically centered in the panel and capped to its height (`--panel-h`) so they can **never**
+    overlap the game screen (D-pad lower-left, A/B lower-right).
+  - **Landscape** (fallback): the game fills the screen and the clusters overlay the lower corners.
+  - Phaser's `Scale.FIT` + `CENTER_BOTH` fits the canvas into whatever size `#game` is, keeping
+    pixel art crisp (canvas `image-rendering: pixelated`); `main.ts` calls `scale.refresh()` on
+    resize/orientationchange so the canvas re-fits when the layout flips.
 - Native gestures are blocked: `index.html` sets `touch-action: none`, `user-select: none`,
   `overflow: hidden`, a no-zoom viewport meta, and the module `preventDefault`s touchmove /
   gesturestart / dblclick.

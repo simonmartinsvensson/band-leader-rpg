@@ -55,6 +55,16 @@ audio.init(game.sound as unknown as Parameters<typeof audio.init>[0]);
 // On-screen controls for touch devices (dispatch the same keys the keyboard uses).
 initTouchControls();
 
+// The portrait/landscape layout resizes the #game box via CSS; re-fit the
+// canvas to its parent when the viewport flips (orientationchange can fire
+// before the new metrics settle, so refresh on the next frame too).
+const refit = () => game.scale.refresh();
+window.addEventListener("resize", refit);
+window.addEventListener("orientationchange", () => {
+  refit();
+  requestAnimationFrame(refit);
+});
+
 // Debug/test hook: lets the headless smoke test (scripts/smoke.mjs) inspect
 // scene + player state. Harmless in production.
 (globalThis as Record<string, unknown>).__GAME__ = game;
