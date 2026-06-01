@@ -10,6 +10,7 @@ import {
   currentChapter,
   completedMilestones,
   storyComplete,
+  interpolate,
 } from "../src/systems/story";
 import { runCutscene, eventEligible, triggerMatches, findEvent, type CutsceneHandlers } from "../src/systems/cutscene";
 import { addItem } from "../src/systems/inventory";
@@ -67,6 +68,14 @@ describe("story progression", () => {
   it("treats an empty story as not complete", () => {
     expect(storyComplete([], {})).toBe(false);
     expect(currentObjective([], {})).toBe("");
+  });
+});
+
+describe("interpolate (name surfacing)", () => {
+  it("substitutes known tokens and leaves unknown ones", () => {
+    expect(interpolate("Hi {name}!", { name: "Riff" })).toBe("Hi Riff!");
+    expect(interpolate("Go {name}, win {place}", { name: "Riff" })).toBe("Go Riff, win {place}");
+    expect(interpolate("no tokens", { name: "Riff" })).toBe("no tokens");
   });
 });
 

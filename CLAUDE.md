@@ -394,24 +394,25 @@ without a counter is *not* enough — the beatability test enforces this.
 ## Story, flags & scripted events
 
 A data-driven story/quest engine built on the existing `flags` registry state (so progress
-persists with the save for free — see Saving). **No story content ships yet — this is the engine;**
-add content by editing the data tables in `src/data`.
+persists with the save for free — see Saving). The **opening arc is implemented** as content in
+`src/data` (see "The opening" below); extend the story by editing those same data tables.
 
 - **Story flags/variables** — named booleans in the registry `"flags"` map (convention: prefix
   story flags `story.`). `src/systems/story.ts` (pure, tested) reads/sets them and derives the
   current objective: `setStoryFlag`/`isFlagSet`, `flagsAllow(flags, requires?, forbids?)` (the gate
-  shared by events + map objects), and `currentMilestone`/`currentObjective`/`currentChapter`/
-  `completedMilestones`/`storyComplete`.
+  shared by events + map objects), `currentMilestone`/`currentObjective`/`currentChapter`/
+  `completedMilestones`/`storyComplete`, and `interpolate(text, vars)` (substitutes `{name}` etc.).
 - **Milestones** (`src/data/story.ts`, `STORY: Milestone[]`) — an ordered list `{ id, chapter,
   objective, flag }`. The **current objective** is the first milestone whose `flag` isn't set;
   earlier ones read as completed. Add milestones in order; set their `flag` when achieved.
 - **Scripted events / cutscenes** (`src/data/events.ts`, `EVENTS: StoryEvent[]`) — each event has a
   `trigger` (`enterMap` | `enterTile {x,y}` | `interact {object}`), optional `requires`/`forbids`
   flag gates and a `once` flag (set on completion; blocks replay), and ordered `steps`. Step kinds:
-  `dialogue`, `wait`, `turn`/`walk` (actor = `"player"` or a map object's `name`), `setFlag`,
-  `giveItem`, `giveCurrency`, `battle` (`trainer` or `species`+`level`). The engine
-  `src/systems/cutscene.ts` (pure, tested) is `findEvent`/`eventEligible`/`triggerMatches` +
-  `runCutscene(steps, handlers)` — it sequences steps and delegates effects to injected handlers.
+  `dialogue`, `nameEntry` (prompts via `NameEntryScene`, persists the player's name), `wait`,
+  `turn`/`walk` (actor = `"player"` or a map object's `name`), `setFlag`, `giveItem`,
+  `giveCurrency`, `battle` (`trainer` or `species`+`level`). The engine `src/systems/cutscene.ts`
+  (pure, tested) is `findEvent`/`eventEligible`/`triggerMatches` + `runCutscene(steps, handlers)` —
+  it sequences steps and delegates effects to injected handlers.
 - **Playback** — `OverworldScene` checks for an eligible event on map-enter (`create`), step
   (`handleStepComplete`, takes precedence over warps/encounters), and NPC interaction (pre-empts
   dialogue). It plays via `cutsceneActive` (input is frozen; cutscene-driven steps don't
@@ -421,20 +422,40 @@ add content by editing the data tables in `src/data`.
 - **Flag-gated map content** — any map object may carry `requires`/`forbids` props (comma-separated
   flag lists); `buildObjects` skips it unless `flagsAllow` passes, so NPCs/warps/trainers/etc.
   appear, disappear, or swap as the story advances.
+- **Current-objective HUD** — `OverworldScene` shows a persistent, screen-fixed objective line
+  (top-left) from `currentObjective(STORY, flags)`, refreshed each frame (cached) and hidden during
+  cutscenes; it advances automatically as story flags are set.
 - **Quest log** — `QuestScene` (overlay) shows the current chapter + objective and recent completed
   milestones, derived from `STORY` + flags. Open it from the pause menu's **Quests** entry or the
   overworld key **`Q`**.
+- **Player name** — chosen via the `nameEntry` step (`NameEntryScene`, a grid usable by D-pad/A/B
+  *and* hardware typing), stored in the registry `"playerName"` and persisted in the save
+  (`DEFAULT_PLAYER_NAME` fallback). It surfaces anywhere text contains `{name}`: dialogue (cutscene
+  + NPC, via `OverworldScene.withName`), the objective HUD, and the quest log.
 
-Pure logic is unit-tested in `tests/story.test.ts` (flags/gating/progression + a full cutscene run
-through `runCutscene` with mock handlers).
+**The opening** (content in `src/data/story.ts` + `src/data/events.ts`, town objects in
+`scripts/gen-map.mjs`): premise — the live scene is dying under the homogenizing label **Monocorp**;
+the player is an unknown leader out to revive it; mentor **Vy** once played with a legendary leader
+who vanished. The new-game flow is the town `enterMap` event `intro` (`once: story.intro_done`):
+name entry → motivation → Vy hands the starter band → first hint of Monocorp + the vanished legend.
+Then three flag-gated `interact` beats guide the early arc: `beat_rival` (meet the rival; runs the
+real `rival_max` battle → `story.met_rival`), `beat_monocorp` (a Monocorp rep appears only after
+`met_rival` and makes the homogenizing pitch → `story.saw_monocorp`), and `beat_mentor_warning`
+(Vy's warning ties Monocorp to the vanished legend and points you at The Blue Note →
+`story.mentor_warning`). The objective HUD advances through each, ending on "Win your first
+residency at The Blue Note."
+
+Pure logic is unit-tested in `tests/story.test.ts` (flags/gating/progression, `interpolate`, + a
+full cutscene run through `runCutscene` with mock handlers); the save round-trip incl. `playerName`
+is in `tests/save.test.ts`.
 
 ## Saving & loading
 
 State persists to **localStorage** across browser refreshes.
 
 - **`src/systems/save.ts`** — `SaveData` captures everything: current `map` + player `x`/`y`,
-  `party`, `roster`, `bag`, `currency`, `flags`, `trainersDefeated`, `residencies`, plus a
-  `version` for future migrations. The serialize/`deserialize`/`snapshot`/`applyToStore` logic is
+  `playerName`, `party`, `roster`, `bag`, `currency`, `flags`, `trainersDefeated`, `residencies`,
+  plus a `version` for future migrations. The serialize/`deserialize`/`snapshot`/`applyToStore` logic is
   pure (no DOM) and unit-tested (`tests/save.test.ts`); `saveGame`/`loadSave`/`hasSave`/`clearSave`
   are thin localStorage wrappers. `deserialize` guards against missing/corrupt/wrong-version data
   (returns null). The store is the Phaser **registry** (which already holds the live state); the

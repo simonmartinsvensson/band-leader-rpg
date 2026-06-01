@@ -13,6 +13,7 @@ import type { Direction } from "./direction";
  */
 export type EventStep =
   | { kind: "dialogue"; speaker?: string; pages: string[] }
+  | { kind: "nameEntry"; prompt?: string; default?: string }
   | { kind: "wait"; ms: number }
   | { kind: "setFlag"; flag: string; value?: boolean }
   | { kind: "giveItem"; item: string; qty?: number }

@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 4,
-  "nextobjectid": 15,
+  "nextobjectid": 16,
   "tilesets": [
     {
       "firstgid": 1,
@@ -1471,7 +1471,7 @@
         {
           "id": 10,
           "name": "rival_max",
-          "type": "trainer",
+          "type": "npc",
           "x": 80,
           "y": 80,
           "width": 16,
@@ -1480,14 +1480,19 @@
           "visible": true,
           "properties": [
             {
-              "name": "trainer",
+              "name": "dialogue",
               "type": "string",
-              "value": "rival_max"
+              "value": "rival_after"
             },
             {
               "name": "facing",
               "type": "string",
               "value": "down"
+            },
+            {
+              "name": "wander",
+              "type": "bool",
+              "value": false
             },
             {
               "name": "tint",
@@ -1498,6 +1503,44 @@
         },
         {
           "id": 11,
+          "name": "monocorp_agent",
+          "type": "npc",
+          "x": 256,
+          "y": 144,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "dialogue",
+              "type": "string",
+              "value": "monocorp_after"
+            },
+            {
+              "name": "facing",
+              "type": "string",
+              "value": "down"
+            },
+            {
+              "name": "wander",
+              "type": "bool",
+              "value": false
+            },
+            {
+              "name": "tint",
+              "type": "string",
+              "value": "#5a6b8c"
+            },
+            {
+              "name": "requires",
+              "type": "string",
+              "value": "story.met_rival"
+            }
+          ]
+        },
+        {
+          "id": 12,
           "name": "to_jazz",
           "type": "warp",
           "x": 16,
@@ -1520,7 +1563,7 @@
           ]
         },
         {
-          "id": 12,
+          "id": 13,
           "name": "from_jazz",
           "type": "entry",
           "x": 32,
@@ -1531,7 +1574,7 @@
           "visible": true
         },
         {
-          "id": 13,
+          "id": 14,
           "name": "to_park",
           "type": "warp",
           "x": 448,
@@ -1554,7 +1597,7 @@
           ]
         },
         {
-          "id": 14,
+          "id": 15,
           "name": "from_park",
           "type": "entry",
           "x": 432,

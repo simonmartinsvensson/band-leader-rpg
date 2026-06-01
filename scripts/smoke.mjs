@@ -43,18 +43,25 @@ try {
   // Boot lands on the title screen — start a new game (fresh context = no save).
   await page.waitForFunction(() => globalThis.__GAME__?.scene.isActive("TitleScene"), undefined, { timeout: 10000 });
   await tap("Space", 1); // New Game
-  // New game auto-plays an intro dialogue (overworld paused) — dismiss it next.
-  await page.waitForFunction(
-    () => globalThis.__GAME__?.scene.isActive("OverworldScene") || globalThis.__GAME__?.scene.isActive("DialogueScene"),
-    undefined,
-    { timeout: 10000 },
-  );
-  for (let i = 0; i < 12 && (await page.evaluate(() => globalThis.__GAME__.scene.isActive("DialogueScene"))); i++) {
-    await tap("Space", 1); // held tap so the dialogue's JustDown poll catches it
+  // New game plays the intro CUTSCENE: dialogue pages + a name-entry step. Drive
+  // it to completion (Enter accepts the default name; Space advances dialogue)
+  // until the cutscene ends and the overworld has control back.
+  const isActive = (key) => page.evaluate((k) => globalThis.__GAME__.scene.isActive(k), key);
+  const cutsceneRunning = () =>
+    page.evaluate(() => globalThis.__GAME__.scene.getScene("OverworldScene")?.cutsceneActive === true);
+  for (let i = 0; i < 60; i++) {
+    if (await isActive("NameEntryScene")) await tap("Enter", 1); // confirm default name
+    else if (await isActive("DialogueScene")) await tap("Space", 1);
+    else if ((await isActive("OverworldScene")) && !(await cutsceneRunning())) break;
+    else await page.waitForTimeout(120);
   }
-  await page.waitForFunction(() => globalThis.__GAME__?.scene.isActive("OverworldScene"), undefined, {
-    timeout: 5000,
-  });
+  await page.waitForFunction(
+    () =>
+      globalThis.__GAME__?.scene.isActive("OverworldScene") &&
+      !globalThis.__GAME__.scene.getScene("OverworldScene").cutsceneActive,
+    undefined,
+    { timeout: 5000 },
+  );
 
   const start = await tile();
   assert(start.x === 3 && start.y === 3, `spawn from objects layer is (3,3), got (${start.x},${start.y})`);

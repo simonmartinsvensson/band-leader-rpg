@@ -11,6 +11,8 @@ import { flagsAllow, type Flags } from "./story";
 /** Effects the runner delegates to. Async handlers are awaited in order. */
 export interface CutsceneHandlers {
   dialogue(speaker: string | undefined, pages: string[]): Promise<void> | void;
+  /** Prompt for and persist the player's name (handler stores it). */
+  nameEntry(prompt: string | undefined, fallback: string | undefined): Promise<void> | void;
   wait(ms: number): Promise<void> | void;
   turn(actor: string, facing: Direction): Promise<void> | void;
   walk(actor: string, path: Direction[]): Promise<void> | void;
@@ -26,6 +28,9 @@ export async function runCutscene(steps: EventStep[], h: CutsceneHandlers): Prom
     switch (step.kind) {
       case "dialogue":
         await h.dialogue(step.speaker, step.pages);
+        break;
+      case "nameEntry":
+        await h.nameEntry(step.prompt, step.default);
         break;
       case "wait":
         await h.wait(step.ms);

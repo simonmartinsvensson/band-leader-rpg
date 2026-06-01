@@ -7,8 +7,10 @@ import {
   currentObjective,
   completedMilestones,
   storyComplete,
+  interpolate,
   type Flags,
 } from "../systems/story";
+import { DEFAULT_PLAYER_NAME } from "../systems/save";
 import { audio } from "../systems/audio";
 import { AudioKeys } from "../data/assets";
 
@@ -38,6 +40,8 @@ export class QuestScene extends Phaser.Scene {
     createText(this, 8, 6, "QUESTS", { color: 0xffd54f });
 
     const flags = (this.registry.get("flags") ?? {}) as Flags;
+    const name = (this.registry.get("playerName") as string) || DEFAULT_PLAYER_NAME;
+    const sub = (t: string) => interpolate(t, { name });
     const done = completedMilestones(STORY, flags);
 
     // Current chapter + objective.
@@ -49,7 +53,7 @@ export class QuestScene extends Phaser.Scene {
     } else {
       createText(this, 8, 24, currentChapter(STORY, flags), { color: 0x4caf50 });
       createText(this, 8, 38, "Objective:", { color: 0x8b8b9b });
-      createText(this, 14, 50, currentObjective(STORY, flags), { color: 0xffffff, maxWidth: GAME_WIDTH - 22 });
+      createText(this, 14, 50, sub(currentObjective(STORY, flags)), { color: 0xffffff, maxWidth: GAME_WIDTH - 22 });
     }
 
     // Completed milestones.
@@ -59,7 +63,7 @@ export class QuestScene extends Phaser.Scene {
       createText(this, 14, doneY + 12, "(nothing yet)", { color: 0x6b6b7b });
     } else {
       done.slice(-6).forEach((m, i) => {
-        createText(this, 14, doneY + 12 + i * 11, `[*] ${m.objective}`, { color: 0xffffff, maxWidth: GAME_WIDTH - 22 });
+        createText(this, 14, doneY + 12 + i * 11, `[*] ${sub(m.objective)}`, { color: 0xffffff, maxWidth: GAME_WIDTH - 22 });
       });
     }
 

@@ -158,13 +158,24 @@ mkdirSync(OUT_DIR, { recursive: true });
     // Warp east to the rehearsal studio; arrive back here from the studio.
     obj({ name: "to_studio", type: "warp", tx: 10, ty: 1, props: { target: "studio", entry: "studio_entry" } }),
     obj({ name: "from_studio", type: "entry", tx: 10, ty: 2 }),
-    // Rival band leader: battles on sight or interaction.
+    // Rival band leader: now a story NPC. Interacting (once the intro is done)
+    // plays the "meet the rival" cutscene, which runs the actual battle; after
+    // that this NPC just shows its post-battle line (dialogue "rival_after").
     obj({
       name: "rival_max",
-      type: "trainer",
+      type: "npc",
       tx: 5,
       ty: 5,
-      props: { trainer: "rival_max", facing: "down", tint: "#e74c3c" },
+      props: { dialogue: "rival_after", facing: "down", wander: false, tint: "#e74c3c" },
+    }),
+    // Monocorp rep: only appears once you've met the rival (flag-gated), and
+    // interacting plays the "Monocorp sighting" cutscene.
+    obj({
+      name: "monocorp_agent",
+      type: "npc",
+      tx: 16,
+      ty: 9,
+      props: { dialogue: "monocorp_after", facing: "down", wander: false, tint: "#5a6b8c", requires: "story.met_rival" },
     }),
     // Warp to the jazz venue (The Blue Note); arrive back here from it.
     obj({ name: "to_jazz", type: "warp", tx: 1, ty: 1, props: { target: "jazz_club", entry: "from_town" } }),

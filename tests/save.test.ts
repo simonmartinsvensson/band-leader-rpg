@@ -20,6 +20,7 @@ function makeStore(initial: Record<string, unknown> = {}): SaveStore & { data: M
 function fullStore() {
   return makeStore({
     loc: { map: "jazz_club", x: 8, y: 8 },
+    playerName: "Riff",
     party: createStarterParty(),
     roster: [createInstance(SPECIES.balladeer, 9)],
     bag: { snack: 2, demo_tape: 1 },
@@ -39,6 +40,12 @@ describe("snapshot + applyToStore", () => {
     expect(save.party.length).toBe(2);
     expect(save.roster[0].speciesId).toBe("balladeer");
     expect(save.trainersDefeated.rival_max).toBe(true);
+    expect(save.playerName).toBe("Riff");
+  });
+
+  it("defaults a missing player name", () => {
+    const save = snapshot(makeStore({ party: [], roster: [], bag: {}, currency: 0, residencies: [] }));
+    expect(save.playerName).toBe("Newcomer");
   });
 
   it("round-trips through serialize/deserialize into a fresh store", () => {

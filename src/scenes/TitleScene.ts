@@ -5,7 +5,7 @@ import { hasSave, loadSave, clearSave, applyToStore, type SaveStore } from "../s
 import { audio } from "../systems/audio";
 import { AudioKeys } from "../data/assets";
 
-const SAVE_KEYS = ["party", "roster", "bag", "currency", "flags", "trainersDefeated", "residencies", "loc"];
+const SAVE_KEYS = ["party", "roster", "bag", "currency", "flags", "trainersDefeated", "residencies", "loc", "playerName"];
 
 /**
  * Title screen shown on boot. "Continue" (only if a save exists) resumes from

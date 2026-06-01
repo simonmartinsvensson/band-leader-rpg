@@ -52,3 +52,12 @@ export function currentChapter(story: Milestone[], flags: Flags): string {
 export function storyComplete(story: Milestone[], flags: Flags): boolean {
   return story.length > 0 && currentMilestone(story, flags) === undefined;
 }
+
+/**
+ * Substitute `{token}` placeholders in story/dialogue text from a variables map,
+ * e.g. interpolate("Hi {name}!", { name: "Riff" }) -> "Hi Riff!". Unknown tokens
+ * are left as-is. Used to surface the player's chosen name in dialogue.
+ */
+export function interpolate(text: string, vars: Record<string, string>): string {
+  return text.replace(/\{(\w+)\}/g, (whole, key: string) => (key in vars ? vars[key] : whole));
+}

@@ -70,6 +70,14 @@ export const DIALOGUES: Record<string, Dialogue> = {
     speaker: "VIP Host",
     pages: ["You made it backstage!", "Word of your residency is spreading fast."],
   },
+  rival_after: {
+    speaker: "Rival Max",
+    pages: ["Go on, chase your residency.", "I'll be watching, {name}. Don't let Monocorp flatten that sound of yours."],
+  },
+  monocorp_after: {
+    speaker: "Monocorp Rep",
+    pages: ["The offer stands. It always stands.", "Enjoy the noise while it lasts."],
+  },
   park_scout: {
     speaker: "Talent Scout",
     pages: [

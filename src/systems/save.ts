@@ -6,9 +6,14 @@ import type { MusicianInstance } from "../types/musician";
 export const SAVE_VERSION = 1;
 const STORAGE_KEY = "band-leader-rpg/save";
 
+/** Fallback band-leader name if the player somehow hasn't chosen one. */
+export const DEFAULT_PLAYER_NAME = "Newcomer";
+
 /** Everything needed to resume a session. All fields are JSON-serializable. */
 export interface SaveData {
   version: number;
+  /** The player's chosen band-leader name (surfaced in dialogue). */
+  playerName: string;
   /** Current overworld location. */
   map: string;
   x: number;
@@ -37,6 +42,7 @@ export function snapshot(store: SaveStore): SaveData {
   const loc = asObj(store.get("loc"));
   return {
     version: SAVE_VERSION,
+    playerName: typeof store.get("playerName") === "string" ? (store.get("playerName") as string) : DEFAULT_PLAYER_NAME,
     map: typeof loc.map === "string" ? loc.map : "town",
     x: typeof loc.x === "number" ? loc.x : 0,
     y: typeof loc.y === "number" ? loc.y : 0,
@@ -52,6 +58,7 @@ export function snapshot(store: SaveStore): SaveData {
 
 /** Restore a SaveData into the live game store. */
 export function applyToStore(store: SaveStore, save: SaveData): void {
+  store.set("playerName", save.playerName ?? DEFAULT_PLAYER_NAME);
   store.set("party", save.party);
   store.set("roster", save.roster);
   store.set("bag", save.bag);
