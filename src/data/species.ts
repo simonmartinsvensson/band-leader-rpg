@@ -70,6 +70,55 @@ export const SPECIES: Record<string, MusicianSpecies> = {
     learnset: { 1: ["sonata"], 6: ["sync_pulse"], 10: ["drop"] },
     recruitDifficulty: 0.8,
   },
+  // --- Second-wave species (busking park pool + the warehouse venue) ---------
+  amplifret: {
+    id: "amplifret",
+    name: "Amplifret",
+    genres: ["rock"],
+    baseStats: { stamina: 50, skill: 62, composure: 44, tempo: 50 },
+    learnset: { 1: ["power_chord"], 5: ["feedback_wail"], 9: ["stage_dive"] },
+    recruitDifficulty: 0.25,
+  },
+  funkadel: {
+    id: "funkadel",
+    name: "Funkadel",
+    genres: ["funk"],
+    baseStats: { stamina: 54, skill: 58, composure: 50, tempo: 56 },
+    learnset: { 1: ["groove_lock"], 5: ["slap_bass"], 9: ["drop_the_one"] },
+    recruitDifficulty: 0.35,
+  },
+  sonatina: {
+    id: "sonatina",
+    name: "Sonatina",
+    genres: ["classical"],
+    baseStats: { stamina: 56, skill: 54, composure: 64, tempo: 40 },
+    learnset: { 1: ["sonata"], 4: ["crescendo"], 8: ["fugue"] },
+    recruitDifficulty: 0.4,
+  },
+  wanderlay: {
+    id: "wanderlay",
+    name: "Wanderlay",
+    genres: ["folk"],
+    baseStats: { stamina: 62, skill: 50, composure: 56, tempo: 40 },
+    learnset: { 1: ["fingerpick"], 4: ["campfire_song"], 8: ["hoedown"] },
+    recruitDifficulty: 0.25,
+  },
+  voltaxe: {
+    id: "voltaxe",
+    name: "Voltaxe",
+    genres: ["electronic", "rock"],
+    baseStats: { stamina: 54, skill: 66, composure: 46, tempo: 62 },
+    learnset: { 1: ["sync_pulse"], 5: ["power_chord"], 9: ["drop"], 12: ["feedback_wail"] },
+    recruitDifficulty: 0.7,
+  },
+  synthrax: {
+    id: "synthrax",
+    name: "Synthrax",
+    genres: ["electronic"],
+    baseStats: { stamina: 52, skill: 70, composure: 50, tempo: 64 },
+    learnset: { 1: ["sync_pulse"], 6: ["sidechain"], 10: ["drop"] },
+    recruitDifficulty: 0.75,
+  },
 };
 
 export const SPECIES_LIST = Object.values(SPECIES);

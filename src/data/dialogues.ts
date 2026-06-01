@@ -70,6 +70,26 @@ export const DIALOGUES: Record<string, Dialogue> = {
     speaker: "VIP Host",
     pages: ["You made it backstage!", "Word of your residency is spreading fast."],
   },
+  park_scout: {
+    speaker: "Talent Scout",
+    pages: [
+      "The riverside park's where the real players warm up. Stronger acts than the street, too.",
+      "Heading for The Warehouse? Those synth-heads run hot. A tight FUNK or CLASSICAL player cuts right through electronic.",
+      "There's a Funkadel and a Sonatina around here somewhere. Just saying.",
+    ],
+  },
+  backstage_host: {
+    speaker: "Stage Manager",
+    pages: [
+      "Two residencies?! The whole circuit's talking about your band.",
+      "Take a breather backstage. You earned the warehouse floor.",
+    ],
+    gift: {
+      items: [{ id: "demo_tape", qty: 2 }],
+      currency: 500,
+      once: "warehouse_backstage_gift",
+    },
+  },
 };
 
 export function getDialogue(id: string): Dialogue | undefined {

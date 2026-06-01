@@ -130,3 +130,70 @@ describe("balance: early game is beatable", () => {
     expect(rate).toBeLessThan(0.6); // beatable later, not at level 5
   });
 });
+
+describe("balance: the second venue (the warehouse) is a step up", () => {
+  // The warehouse is electronic-themed (boss L13-15), a clear tier above the
+  // jazz club (boss L8-9), and it sits behind a guard rival. The intended
+  // answer is to recruit a CLASSICAL player (Sonatina, 2x into electronic) from
+  // the new park encounter zone — leveling a folk/jazz party is not enough.
+
+  it("needs a counter, not just levels: an uncountered party loses even when leveled", () => {
+    // The jazz-era party at jazz-venue levels.
+    const jazzEra = [
+      createInstance(SPECIES.rifflet, 9),
+      createInstance(SPECIES.crooner, 9),
+      createInstance(SPECIES.balladeer, 9),
+    ];
+    // Same party leveled up — but folk is *weak* into electronic, so levels alone
+    // don't crack it.
+    const leveled = [
+      createInstance(SPECIES.rifflet, 14),
+      createInstance(SPECIES.crooner, 14),
+      createInstance(SPECIES.balladeer, 14),
+    ];
+    const jazzRate = winRate(jazzEra, "warehouse_headliner");
+    const leveledRate = winRate(leveled, "warehouse_headliner");
+    console.log(`jazz-era party vs warehouse boss: ${(jazzRate * 100).toFixed(0)}%`);
+    console.log(`leveled (no counter) vs warehouse boss: ${(leveledRate * 100).toFixed(0)}%`);
+    expect(jazzRate).toBeLessThan(0.4);
+    expect(leveledRate).toBeLessThan(0.5);
+  });
+
+  it("is winnable with a classical counter (Sonatina) recruited from the park", () => {
+    const ready = [
+      createInstance(SPECIES.rifflet, 13),
+      createInstance(SPECIES.crooner, 13),
+      createInstance(SPECIES.sonatina, 13),
+    ];
+    const rate = winRate(ready, "warehouse_headliner");
+    console.log(`classical-counter party (L13) vs warehouse boss: ${(rate * 100).toFixed(0)}%`);
+    expect(rate).toBeGreaterThanOrEqual(0.75);
+
+    // Funk (Funkadel) is a softer counter — winnable, but the boss's Orchestron
+    // resists it, so it's not the clean answer classical is. (Reference only.)
+    const funk = [
+      createInstance(SPECIES.rifflet, 13),
+      createInstance(SPECIES.crooner, 13),
+      createInstance(SPECIES.funkadel, 13),
+    ];
+    console.log(`funk-counter party (L13) vs warehouse boss: ${(winRate(funk, "warehouse_headliner") * 100).toFixed(0)}%`);
+  });
+
+  it("the venue guard (Rival Dex) gates it: tough early, fair once you're ready", () => {
+    const jazzEra = [
+      createInstance(SPECIES.rifflet, 9),
+      createInstance(SPECIES.crooner, 9),
+      createInstance(SPECIES.balladeer, 9),
+    ];
+    const ready = [
+      createInstance(SPECIES.rifflet, 13),
+      createInstance(SPECIES.crooner, 13),
+      createInstance(SPECIES.sonatina, 13),
+    ];
+    const earlyRate = winRate(jazzEra, "rival_dex");
+    const readyRate = winRate(ready, "rival_dex");
+    console.log(`jazz-era vs guard: ${(earlyRate * 100).toFixed(0)}%  ready vs guard: ${(readyRate * 100).toFixed(0)}%`);
+    expect(earlyRate).toBeLessThan(0.5);
+    expect(readyRate).toBeGreaterThanOrEqual(0.75);
+  });
+});

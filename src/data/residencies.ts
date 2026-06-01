@@ -10,6 +10,7 @@ export interface Residency {
 
 export const RESIDENCIES: Record<string, Residency> = {
   jazz: { id: "jazz", name: "Jazz Residency", venue: "The Blue Note" },
+  electronic: { id: "electronic", name: "Warehouse Residency", venue: "The Warehouse" },
 };
 
 export function getResidency(id: string): Residency | undefined {

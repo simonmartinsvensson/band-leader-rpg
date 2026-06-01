@@ -169,6 +169,9 @@ mkdirSync(OUT_DIR, { recursive: true });
     // Warp to the jazz venue (The Blue Note); arrive back here from it.
     obj({ name: "to_jazz", type: "warp", tx: 1, ty: 1, props: { target: "jazz_club", entry: "from_town" } }),
     obj({ name: "from_jazz", type: "entry", tx: 2, ty: 1 }),
+    // Warp east to the riverside park (and on to the warehouse venue).
+    obj({ name: "to_park", type: "warp", tx: 28, ty: 11, props: { target: "park", entry: "from_town" } }),
+    obj({ name: "from_park", type: "entry", tx: 27, ty: 11 }),
   ];
 
   const map = makeMap(W, H, [
@@ -334,4 +337,154 @@ mkdirSync(OUT_DIR, { recursive: true });
   ]);
   writeFileSync(resolve(OUT_DIR, "vip-lounge-map.json"), JSON.stringify(map, null, 2) + "\n");
   console.log(`Wrote vip-lounge-map.json (vip_lounge, ${W}x${H})`);
+}
+
+// =============================================================================
+// PARK — the riverside park east of town: a higher-level "park_path" encounter
+// zone (rounds out the roster + the counters for the warehouse), a talent
+// scout, a warp back to town, and a warp east to the warehouse venue. A river
+// (water) splits the park, crossed by a single path bridge on row 8.
+// =============================================================================
+{
+  nextObjectId = 1;
+  const W = 22;
+  const H = 16;
+  const idx = (x, y) => y * W + x;
+
+  const ground = new Array(W * H).fill(GRASS);
+  for (let x = 1; x < W - 1; x++) ground[idx(x, 8)] = PATH; // the walkway / bridge
+
+  const collision = new Array(W * H).fill(0);
+  border(collision, W, H);
+  // A river down x=11, with the bridge (row 8) left open to cross.
+  for (let y = 1; y < H - 1; y++) if (y !== 8) collision[idx(11, y)] = WATER;
+
+  const objects = [
+    obj({ name: "from_town", type: "entry", tx: 2, ty: 8 }),
+    obj({ name: "to_town", type: "warp", tx: 1, ty: 8, props: { target: "town", entry: "from_park" } }),
+    // Talent scout: hints at the warehouse counters (funk/classical vs electronic).
+    obj({
+      name: "scout",
+      type: "npc",
+      tx: 4,
+      ty: 5,
+      props: { dialogue: "park_scout", facing: "down", wander: true, tint: "#1abc9c" },
+    }),
+    // The park encounter zone (covers the grass either side of the walkway).
+    obj({
+      name: "park_zone",
+      type: "encounter",
+      tx: 2,
+      ty: 3,
+      tw: 18,
+      th: 10,
+      props: { zone: "park_path" },
+    }),
+    // Warp east to the warehouse venue; arrive back here from it.
+    obj({ name: "from_warehouse", type: "entry", tx: 19, ty: 8 }),
+    obj({ name: "to_warehouse", type: "warp", tx: 20, ty: 8, props: { target: "warehouse", entry: "from_park" } }),
+  ];
+
+  const map = makeMap(W, H, [
+    tileLayer(1, "ground", W, H, ground),
+    tileLayer(2, "collision", W, H, collision),
+    { id: 3, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
+  ]);
+  writeFileSync(resolve(OUT_DIR, "park-map.json"), JSON.stringify(map, null, 2) + "\n");
+  console.log(`Wrote park-map.json (park, ${W}x${H})`);
+}
+
+// =============================================================================
+// WAREHOUSE — "The Warehouse" venue (electronic theme), a difficulty step above
+// the jazz club. An open floor: a guard rival (the opening act) covers the
+// entrance, the headliner waits on the stage, and a residency-gated backstage
+// door opens once you hold the Warehouse Residency.
+// =============================================================================
+{
+  nextObjectId = 1;
+  const W = 18;
+  const H = 13;
+  const idx = (x, y) => y * W + x;
+
+  const ground = new Array(W * H).fill(PATH); // a concrete dance floor
+  for (let x = 5; x <= 12; x++) ground[idx(x, 2)] = WATER; // neon strip behind the stage
+
+  const collision = new Array(W * H).fill(0);
+  border(collision, W, H);
+  // Speaker stacks flanking the stage (decor + solid), clear of the aisle.
+  collision[idx(4, 2)] = WALL;
+  collision[idx(13, 2)] = WALL;
+
+  const objects = [
+    obj({ name: "from_park", type: "entry", tx: 9, ty: 11 }),
+    obj({ name: "from_backstage", type: "entry", tx: 3, ty: 3 }),
+    // Guard rival (opening act): faces the entrance and challenges on sight. The
+    // floor is open, so you can pass once he's beaten (he keeps his tile).
+    obj({
+      name: "rival_dex",
+      type: "trainer",
+      tx: 9,
+      ty: 9,
+      props: { trainer: "rival_dex", facing: "down", tint: "#e67e22" },
+    }),
+    // Headliner boss on the stage; grants the Warehouse Residency.
+    obj({
+      name: "warehouse_headliner",
+      type: "trainer",
+      tx: 9,
+      ty: 3,
+      props: { trainer: "warehouse_headliner", facing: "down", tint: "#1abc9c" },
+    }),
+    // Backstage door — opens once you hold the Warehouse Residency.
+    obj({
+      name: "backstage_door",
+      type: "gate",
+      tx: 3,
+      ty: 2,
+      props: { requires: "electronic", target: "backstage", entry: "backstage_entry" },
+    }),
+    obj({ name: "to_park", type: "warp", tx: 16, ty: 11, props: { target: "park", entry: "from_warehouse" } }),
+  ];
+
+  const map = makeMap(W, H, [
+    tileLayer(1, "ground", W, H, ground),
+    tileLayer(2, "collision", W, H, collision),
+    { id: 3, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
+  ]);
+  writeFileSync(resolve(OUT_DIR, "warehouse-map.json"), JSON.stringify(map, null, 2) + "\n");
+  console.log(`Wrote warehouse-map.json (warehouse, ${W}x${H})`);
+}
+
+// =============================================================================
+// BACKSTAGE — the gated reward area unlocked by the Warehouse Residency.
+// =============================================================================
+{
+  nextObjectId = 1;
+  const W = 8;
+  const H = 6;
+  const idx = (x, y) => y * W + x;
+
+  const ground = new Array(W * H).fill(PATH);
+  const collision = new Array(W * H).fill(0);
+  border(collision, W, H);
+
+  const objects = [
+    obj({ name: "backstage_entry", type: "entry", tx: 4, ty: 4 }),
+    obj({
+      name: "backstage_host",
+      type: "npc",
+      tx: 4,
+      ty: 2,
+      props: { dialogue: "backstage_host", facing: "down", wander: false, tint: "#f1c40f" },
+    }),
+    obj({ name: "to_warehouse", type: "warp", tx: 1, ty: 1, props: { target: "warehouse", entry: "from_backstage" } }),
+  ];
+
+  const map = makeMap(W, H, [
+    tileLayer(1, "ground", W, H, ground),
+    tileLayer(2, "collision", W, H, collision),
+    { id: 3, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
+  ]);
+  writeFileSync(resolve(OUT_DIR, "backstage-map.json"), JSON.stringify(map, null, 2) + "\n");
+  console.log(`Wrote backstage-map.json (backstage, ${W}x${H})`);
 }

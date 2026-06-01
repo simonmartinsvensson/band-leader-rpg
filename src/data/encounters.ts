@@ -18,6 +18,15 @@ export const ENCOUNTER_ZONES: Record<string, EncounterZone> = {
     maxLevel: 8,
     musicians: ["grooveling", "crooner", "balladeer"],
   },
+  // The riverside park, between town and the warehouse venue. A step up in level
+  // from the busking street, and home to the counters for the electronic venue:
+  // Funkadel (funk) and Sonatina (classical) both hit electronic for 2x.
+  park_path: {
+    rate: 0.45,
+    minLevel: 9,
+    maxLevel: 12,
+    musicians: ["amplifret", "funkadel", "sonatina", "wanderlay"],
+  },
 };
 
 export function getEncounterZone(id: string): EncounterZone | undefined {

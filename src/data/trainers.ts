@@ -54,6 +54,36 @@ export const TRAINERS: Record<string, Trainer> = {
     sightRange: 4,
     residency: "jazz",
   },
+  // The warehouse's opening act — guards the door to the venue floor. A clear
+  // step above the rival in town, but below the headliner behind him.
+  rival_dex: {
+    id: "rival_dex",
+    name: "Rival Dex",
+    team: [
+      { species: "amplifret", level: 11 },
+      { species: "voltaxe", level: 12 },
+    ],
+    reward: 600,
+    intro: ["You again? This is MY warehouse now.", "No one reaches the headliner past me."],
+    defeatLine: ["Pfft. Fine. Go on through."],
+    postLine: ["The floor's that way. Don't embarrass yourself."],
+    sightRange: 4,
+  },
+  warehouse_headliner: {
+    id: "warehouse_headliner",
+    name: "Headliner Volt",
+    team: [
+      { species: "synthling", level: 13 },
+      { species: "orchestron", level: 13 },
+      { species: "synthrax", level: 15 },
+    ],
+    reward: 1400,
+    intro: ["So you cleared the door. Cute.", "Out here the beat never drops. Let's see you keep up."],
+    defeatLine: ["...no way. You actually rode that out."],
+    postLine: ["The Warehouse is yours. The circuit's listening now."],
+    sightRange: 4,
+    residency: "electronic",
+  },
 };
 
 export function getTrainer(id: string): Trainer | undefined {
