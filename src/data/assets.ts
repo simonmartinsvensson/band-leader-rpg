@@ -39,3 +39,28 @@ export const IMAGES = [{ key: AssetKeys.NPC, path: "assets/npc.png" }] as const;
 
 /** Every placeholder is built on the 16x16 grid. */
 export const FRAME_CONFIG = { frameWidth: TILE_SIZE, frameHeight: TILE_SIZE } as const;
+
+/**
+ * Audio loader keys. Music is per-area (looping); SFX are one-shots. The files
+ * are placeholder chiptune WAVs from `scripts/gen-audio.mjs` (`npm run
+ * gen:audio`). To use real audio, drop files with these same keys into
+ * public/assets/audio/ — the game references sounds only by key. See CLAUDE.md.
+ */
+export const AudioKeys = {
+  MUSIC_OVERWORLD: "music_overworld",
+  MUSIC_BATTLE: "music_battle",
+  MUSIC_VENUE: "music_venue",
+  SFX_MOVE: "sfx_move",
+  SFX_CONFIRM: "sfx_confirm",
+  SFX_CANCEL: "sfx_cancel",
+  SFX_HIT: "sfx_hit",
+  SFX_FAINT: "sfx_faint",
+  SFX_LEVELUP: "sfx_levelup",
+  SFX_RECRUIT: "sfx_recruit",
+} as const;
+
+/** Audio assets to load: key -> file (under public/assets/audio). */
+export const AUDIO = Object.values(AudioKeys).map((key) => ({
+  key,
+  path: `assets/audio/${key}.wav`,
+})) as ReadonlyArray<{ key: string; path: string }>;

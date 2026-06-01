@@ -13,7 +13,7 @@ export interface DialogueData {
 const MARGIN = 8;
 const BOX_HEIGHT = 48;
 const PADDING = 6;
-const TYPE_DELAY = 30; // ms per character
+const TYPE_DELAY = 24; // ms per character (snappy but readable)
 
 /**
  * Modal dialogue overlay. Launched on top of (and pausing) the overworld:

@@ -2,6 +2,9 @@ import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT } from "../data/constants";
 import { createText } from "../ui/text";
 import { saveGame, type SaveStore } from "../systems/save";
+import { audio } from "../systems/audio";
+import { AudioKeys } from "../data/assets";
+import { audioLabel } from "../systems/audioSettings";
 import type { PartyData } from "./PartyScene";
 import type { BagData } from "./BagScene";
 import type { CareerData } from "./CareerScene";
@@ -10,7 +13,7 @@ export interface PauseData {
   parent: string;
 }
 
-const OPTIONS = ["Save Game", "Party", "Bag", "Career", "Resume"] as const;
+const OPTIONS = ["Save Game", "Party", "Bag", "Career", "Audio", "Resume"] as const;
 
 /**
  * Main pause menu (overworld key Esc). Saves the game to localStorage, opens
@@ -24,9 +27,12 @@ export class PauseScene extends Phaser.Scene {
 
   private cursor!: Phaser.GameObjects.BitmapText;
   private status!: Phaser.GameObjects.BitmapText;
+  private optionTexts: Phaser.GameObjects.BitmapText[] = [];
   private keys!: {
     up: Phaser.Input.Keyboard.Key[];
     down: Phaser.Input.Keyboard.Key[];
+    left: Phaser.Input.Keyboard.Key[];
+    right: Phaser.Input.Keyboard.Key[];
     confirm: Phaser.Input.Keyboard.Key[];
     cancel: Phaser.Input.Keyboard.Key[];
   };
@@ -43,12 +49,12 @@ export class PauseScene extends Phaser.Scene {
 
   create(): void {
     this.add.graphics().fillStyle(0x0b0b12, 0.92).fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    this.add.graphics().lineStyle(1, 0xffffff, 0.6).strokeRect(70, 30, 100, 96);
-    createText(this, 78, 36, "PAUSE", { color: 0xffd54f });
+    this.add.graphics().lineStyle(1, 0xffffff, 0.6).strokeRect(70, 28, 104, 104);
+    createText(this, 78, 34, "PAUSE", { color: 0xffd54f });
 
-    OPTIONS.forEach((label, i) => createText(this, 86, 52 + i * 12, label));
-    this.cursor = createText(this, 76, 52, ">");
-    this.status = createText(this, 8, GAME_HEIGHT - 10, "Up/Down  Space:select  Esc:resume", { color: 0x8b8b9b });
+    this.optionTexts = OPTIONS.map((label, i) => createText(this, 86, 50 + i * 12, this.optionLabel(label)));
+    this.cursor = createText(this, 76, 50, ">");
+    this.status = createText(this, 8, GAME_HEIGHT - 10, "Move  L/R:Vol  Space:Sel  Esc:Resume", { color: 0x8b8b9b });
 
     const kb = this.input.keyboard!;
     const KC = Phaser.Input.Keyboard.KeyCodes;
@@ -56,6 +62,8 @@ export class PauseScene extends Phaser.Scene {
     this.keys = {
       up: [k(KC.UP), k(KC.W)],
       down: [k(KC.DOWN), k(KC.S)],
+      left: [k(KC.LEFT), k(KC.A)],
+      right: [k(KC.RIGHT), k(KC.D)],
       confirm: [k(KC.SPACE), k(KC.ENTER)],
       cancel: [k(KC.ESC), k(KC.BACKSPACE)],
     };
@@ -65,21 +73,42 @@ export class PauseScene extends Phaser.Scene {
   update(): void {
     if (this.busy) return;
     if (this.pressed("cancel")) {
+      audio.sfx(AudioKeys.SFX_CANCEL);
       this.resume();
       return;
     }
+    const before = this.index;
     if (this.pressed("up") && this.index > 0) this.index--;
     else if (this.pressed("down") && this.index < OPTIONS.length - 1) this.index++;
+    if (this.index !== before) audio.sfx(AudioKeys.SFX_MOVE);
+
+    // The Audio row: Left/Right adjust volume live (Confirm toggles mute below).
+    if (OPTIONS[this.index] === "Audio") {
+      if (this.pressed("left")) {
+        audio.lowerVolume();
+        audio.sfx(AudioKeys.SFX_MOVE);
+      } else if (this.pressed("right")) {
+        audio.raiseVolume();
+        audio.sfx(AudioKeys.SFX_MOVE);
+      }
+    }
     this.refresh();
 
     if (this.pressed("confirm")) this.select(OPTIONS[this.index]);
   }
 
+  private optionLabel(label: (typeof OPTIONS)[number]): string {
+    return label === "Audio" ? `Audio: ${audioLabel(audio.getSettings())}` : label;
+  }
+
   private refresh(): void {
-    this.cursor.setY(52 + this.index * 12);
+    this.cursor.setY(50 + this.index * 12);
+    const ai = OPTIONS.indexOf("Audio");
+    this.optionTexts[ai]?.setText(this.optionLabel("Audio"));
   }
 
   private select(option: (typeof OPTIONS)[number]): void {
+    audio.sfx(AudioKeys.SFX_CONFIRM);
     switch (option) {
       case "Save Game": {
         const ok = saveGame(this.registry as unknown as SaveStore);
@@ -95,6 +124,10 @@ export class PauseScene extends Phaser.Scene {
         break;
       case "Career":
         this.openSub("CareerScene", { parent: this.parent } satisfies CareerData);
+        break;
+      case "Audio":
+        audio.toggleMute(); // Confirm = mute toggle; Left/Right = volume (in update)
+        this.refresh();
         break;
       case "Resume":
         this.resume();
@@ -118,7 +151,7 @@ export class PauseScene extends Phaser.Scene {
     this.status.setText(text).setTint(0x4caf50);
     this.time.delayedCall(700, () => {
       this.busy = false;
-      this.status.setText("Up/Down  Space:select  Esc:resume").setTint(0x8b8b9b);
+      this.status.setText("Move  L/R:Vol  Space:Sel  Esc:Resume").setTint(0x8b8b9b);
     });
   }
 

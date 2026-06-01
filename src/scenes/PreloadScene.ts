@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT } from "../data/constants";
-import { SPRITESHEETS, IMAGES, FRAME_CONFIG } from "../data/assets";
+import { SPRITESHEETS, IMAGES, FRAME_CONFIG, AUDIO } from "../data/assets";
 import { createText } from "../ui/text";
 
 /**
@@ -24,6 +24,9 @@ export class PreloadScene extends Phaser.Scene {
     }
     for (const img of IMAGES) {
       this.load.image(img.key, img.path);
+    }
+    for (const sound of AUDIO) {
+      this.load.audio(sound.key, sound.path);
     }
   }
 

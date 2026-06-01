@@ -12,6 +12,7 @@ import { ShopScene } from "./scenes/ShopScene";
 import { CareerScene } from "./scenes/CareerScene";
 import { PauseScene } from "./scenes/PauseScene";
 import { initTouchControls } from "./ui/touchControls";
+import { audio } from "./systems/audio";
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -46,6 +47,10 @@ const config: Phaser.Types.Core.GameConfig = {
 };
 
 const game = new Phaser.Game(config);
+
+// Global audio manager — wraps Phaser's game-scoped sound manager so music
+// persists across scenes and one mute/volume setting governs everything.
+audio.init(game.sound as unknown as Parameters<typeof audio.init>[0]);
 
 // On-screen controls for touch devices (dispatch the same keys the keyboard uses).
 initTouchControls();

@@ -5,6 +5,8 @@ import { getSpecies } from "../data/species";
 import { getTechnique } from "../data/techniques";
 import { GENRES } from "../data/genres";
 import { swapSlots, type Slot } from "../systems/party";
+import { audio } from "../systems/audio";
+import { AudioKeys } from "../data/assets";
 import type { MusicianInstance } from "../types/musician";
 
 export interface PartyData {
@@ -85,16 +87,20 @@ export class PartyScene extends Phaser.Scene {
   }
 
   update(): void {
+    const before = this.index;
     if (this.pressed("up") && this.index > 0) this.index--;
     else if (this.pressed("down") && this.index < this.slots.length - 1) this.index++;
+    if (this.index !== before) audio.sfx(AudioKeys.SFX_MOVE);
 
     if (this.pressed("confirm")) {
+      audio.sfx(AudioKeys.SFX_CONFIRM);
       if (this.heldIndex < 0) this.heldIndex = this.index;
       else {
         swapSlots(this.party, this.roster, this.slots[this.heldIndex], this.slots[this.index]);
         this.heldIndex = -1;
       }
     } else if (this.pressed("cancel")) {
+      audio.sfx(AudioKeys.SFX_CANCEL);
       if (this.heldIndex >= 0) this.heldIndex = -1;
       else {
         this.scene.resume(this.parent);

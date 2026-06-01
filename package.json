@@ -11,6 +11,7 @@
     "gen:assets": "node scripts/gen-placeholders.mjs",
     "gen:map": "node scripts/gen-map.mjs",
     "gen:font": "node scripts/gen-font.mjs",
+    "gen:audio": "node scripts/gen-audio.mjs",
     "test": "vitest run",
     "check:data": "vitest run tests/datamodel.test.ts --disable-console-intercept",
     "smoke": "node scripts/smoke.mjs"

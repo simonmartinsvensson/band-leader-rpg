@@ -3,6 +3,8 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../data/constants";
 import { createText } from "../ui/text";
 import { RESIDENCIES } from "../data/residencies";
 import { TRAINERS } from "../data/trainers";
+import { audio } from "../systems/audio";
+import { AudioKeys } from "../data/assets";
 
 export interface CareerData {
   parent: string;
@@ -61,6 +63,7 @@ export class CareerScene extends Phaser.Scene {
 
   update(): void {
     if (this.keys.some((k) => Phaser.Input.Keyboard.JustDown(k))) {
+      audio.sfx(AudioKeys.SFX_CANCEL);
       this.scene.resume(this.parent);
       this.scene.stop();
     }

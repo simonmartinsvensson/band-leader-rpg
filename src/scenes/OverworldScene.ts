@@ -12,6 +12,8 @@ import type { DialogueData } from "./DialogueScene";
 import { getDialogue } from "../data/dialogues";
 import { getEncounterZone } from "../data/encounters";
 import { MAPS, MapKeys } from "../data/maps";
+import { audio } from "../systems/audio";
+import { AudioKeys } from "../data/assets";
 import { createInstance } from "../systems/stats";
 import { SPECIES, getSpecies } from "../data/species";
 import { createStarterParty, healParty } from "../systems/party";
@@ -96,10 +98,23 @@ export class OverworldScene extends Phaser.Scene {
   private pendingWarp: Warp | null = null;
   private pendingBattle: BattleData | null = null;
   private pendingTrainer: string | null = null;
+  private transitioning = false; // true during a warp fade-out (freezes input)
 
   constructor() {
     super("OverworldScene");
   }
+
+  /** Music for the current area: venues get the venue theme, else overworld. */
+  private areaTrack(): string {
+    const venues: string[] = [MapKeys.JAZZ_CLUB, MapKeys.VIP_LOUNGE, MapKeys.WAREHOUSE, MapKeys.BACKSTAGE];
+    return venues.includes(this.mapKey) ? AudioKeys.MUSIC_VENUE : AudioKeys.MUSIC_OVERWORLD;
+  }
+
+  /** Re-assert the area music whenever the overworld resumes (e.g. after a
+   *  battle/dialogue/menu). A no-op if that track is already playing. */
+  private readonly onResume = (): void => {
+    audio.playMusic(this.areaTrack());
+  };
 
   init(data: OverworldData): void {
     this.mapKey = data?.map ?? MapKeys.TOWN;
@@ -118,8 +133,16 @@ export class OverworldScene extends Phaser.Scene {
     this.pendingWarp = null;
     this.pendingBattle = null;
     this.pendingTrainer = null;
+    this.transitioning = false;
     this.interactWasDown = false;
     this.moveInput = new MovementController();
+
+    // Fade the map in (covers warp restarts + the initial launch) and start the
+    // area's music. Re-assert that music every time the scene resumes.
+    this.cameras.main.fadeIn(220, 11, 11, 18);
+    audio.playMusic(this.areaTrack());
+    this.events.off("resume", this.onResume);
+    this.events.on("resume", this.onResume);
 
     // Game-global state (survives scene restarts / warps).
     if (!this.registry.has("party")) this.registry.set("party", createStarterParty());
@@ -186,11 +209,20 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   update(time: number): void {
-    // A warp queued by the previous step: re-run the scene with the new map.
+    // Mid warp-fade: freeze everything until the fade-out completes + restarts.
+    if (this.transitioning) return;
+
+    // A warp queued by the previous step: fade out, then re-run the scene with
+    // the new map (the fresh create() fades back in).
     if (this.pendingWarp) {
       const warp = this.pendingWarp;
       this.pendingWarp = null;
-      this.scene.restart({ map: warp.target, entry: warp.entry });
+      this.transitioning = true;
+      const cam = this.cameras.main;
+      cam.fadeOut(180, 11, 11, 18);
+      cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () =>
+        this.scene.restart({ map: warp.target, entry: warp.entry }),
+      );
       return;
     }
     // A battle queued by the previous step (wild encounter, or trainer after

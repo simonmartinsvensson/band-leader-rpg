@@ -2,7 +2,9 @@ import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT } from "../data/constants";
 import { createText } from "../ui/text";
 import { getItem } from "../data/items";
+import { AudioKeys } from "../data/assets";
 import { addItem, removeItem, bagEntries, canAfford, type Bag } from "../systems/inventory";
+import { audio } from "../systems/audio";
 
 export interface ShopData {
   parent: string;
@@ -115,15 +117,21 @@ export class ShopScene extends Phaser.Scene {
     const rows = this.rows();
 
     if (this.pressed("cancel")) {
+      audio.sfx(AudioKeys.SFX_CANCEL);
       if (this.phase === "menu") this.exit();
       else this.enterMenu();
       return;
     }
+    const before = this.index;
     if (this.pressed("up") && this.index > 0) this.index--;
     else if (this.pressed("down") && this.index < rows.length - 1) this.index++;
+    if (this.index !== before) audio.sfx(AudioKeys.SFX_MOVE);
     this.render(rows);
 
-    if (this.pressed("confirm") && rows.length > 0) this.confirm();
+    if (this.pressed("confirm") && rows.length > 0) {
+      audio.sfx(AudioKeys.SFX_CONFIRM);
+      this.confirm();
+    }
   }
 
   private confirm(): void {

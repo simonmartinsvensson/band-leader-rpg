@@ -2,6 +2,8 @@ import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT } from "../data/constants";
 import { createText } from "../ui/text";
 import { hasSave, loadSave, clearSave, applyToStore, type SaveStore } from "../systems/save";
+import { audio } from "../systems/audio";
+import { AudioKeys } from "../data/assets";
 
 const SAVE_KEYS = ["party", "roster", "bag", "currency", "flags", "trainersDefeated", "residencies", "loc"];
 
@@ -30,6 +32,8 @@ export class TitleScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.cameras.main.fadeIn(300, 11, 11, 18);
+    audio.playMusic(AudioKeys.MUSIC_OVERWORLD);
     this.add.graphics().fillStyle(0x0b0b12, 1).fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
     createText(this, GAME_WIDTH / 2, 34, "BAND LEADER", { color: 0xffd54f, origin: 0.5 });
     createText(this, GAME_WIDTH / 2, 48, "a band-leader RPG", { color: 0x8b8b9b, origin: 0.5 });
@@ -59,11 +63,19 @@ export class TitleScene extends Phaser.Scene {
       this.updateConfirm();
       return;
     }
-    if (this.pressed("up") && this.index > 0) this.index--;
-    else if (this.pressed("down") && this.index < this.options.length - 1) this.index++;
+    if (this.pressed("up") && this.index > 0) {
+      this.index--;
+      audio.sfx(AudioKeys.SFX_MOVE);
+    } else if (this.pressed("down") && this.index < this.options.length - 1) {
+      this.index++;
+      audio.sfx(AudioKeys.SFX_MOVE);
+    }
     this.refresh();
 
-    if (this.pressed("confirm")) this.select(this.options[this.index]);
+    if (this.pressed("confirm")) {
+      audio.sfx(AudioKeys.SFX_CONFIRM);
+      this.select(this.options[this.index]);
+    }
   }
 
   private select(option: string): void {
@@ -81,13 +93,18 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private updateConfirm(): void {
-    if (this.pressed("up") || this.pressed("down")) this.confirmYes = !this.confirmYes;
+    if (this.pressed("up") || this.pressed("down")) {
+      this.confirmYes = !this.confirmYes;
+      audio.sfx(AudioKeys.SFX_MOVE);
+    }
     if (this.pressed("cancel")) {
+      audio.sfx(AudioKeys.SFX_CANCEL);
       this.confirming = false;
       this.refresh();
       return;
     }
     if (this.pressed("confirm")) {
+      audio.sfx(AudioKeys.SFX_CONFIRM);
       if (this.confirmYes) this.startNewGame();
       else {
         this.confirming = false;

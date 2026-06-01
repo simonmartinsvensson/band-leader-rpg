@@ -2,7 +2,9 @@ import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT } from "../data/constants";
 import { createText } from "../ui/text";
 import { getItem } from "../data/items";
+import { AudioKeys } from "../data/assets";
 import { bagEntries, removeItem, restoreStamina, type Bag } from "../systems/inventory";
+import { audio } from "../systems/audio";
 import type { MusicianInstance } from "../types/musician";
 
 export interface BagData {
@@ -118,18 +120,22 @@ export class BagScene extends Phaser.Scene {
 
   private handleList(): void {
     if (this.pressed("cancel")) {
+      audio.sfx(AudioKeys.SFX_CANCEL);
       this.scene.resume(this.parent);
       this.scene.stop();
       return;
     }
     if (this.entries.length === 0) return;
+    const before = this.index;
     if (this.pressed("up") && this.index > 0) this.index--;
     else if (this.pressed("down") && this.index < this.entries.length - 1) this.index++;
+    if (this.index !== before) audio.sfx(AudioKeys.SFX_MOVE);
     this.refreshList();
 
     if (this.pressed("confirm")) {
       const item = getItem(this.entries[this.index].id);
       if (!item) return;
+      audio.sfx(AudioKeys.SFX_CONFIRM);
       if (!item.usableInField) {
         this.flash("You can't use that out here.");
         return;
@@ -160,15 +166,21 @@ export class BagScene extends Phaser.Scene {
 
   private handleTarget(): void {
     if (this.pressed("cancel")) {
+      audio.sfx(AudioKeys.SFX_CANCEL);
       this.memberTexts.forEach((t) => t.setVisible(false));
       this.enterList();
       return;
     }
+    const before = this.targetIndex;
     if (this.pressed("up") && this.targetIndex > 0) this.targetIndex--;
     else if (this.pressed("down") && this.targetIndex < this.party.length - 1) this.targetIndex++;
+    if (this.targetIndex !== before) audio.sfx(AudioKeys.SFX_MOVE);
     this.refreshTarget();
 
-    if (this.pressed("confirm")) this.useOn(this.party[this.targetIndex]);
+    if (this.pressed("confirm")) {
+      audio.sfx(AudioKeys.SFX_CONFIRM);
+      this.useOn(this.party[this.targetIndex]);
+    }
   }
 
   private useOn(member: MusicianInstance): void {

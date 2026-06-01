@@ -1,7 +1,8 @@
 import Phaser from "phaser";
 import { GAME_WIDTH } from "../data/constants";
-import { AssetKeys } from "../data/assets";
+import { AssetKeys, AudioKeys } from "../data/assets";
 import { GENRES } from "../data/genres";
+import { audio } from "../systems/audio";
 import { createText } from "../ui/text";
 import {
   createBattleState,
@@ -100,6 +101,7 @@ export class BattleScene extends Phaser.Scene {
   private bagItems: string[] = []; // item ids selectable in the bag
 
   private hpBars!: Record<Side, Phaser.GameObjects.Graphics>;
+  private lastHp: Record<Side, number> = { player: 0, opponent: 0 }; // for damage numbers
   private hpText!: Phaser.GameObjects.BitmapText;
   private playerName!: Phaser.GameObjects.BitmapText;
   private opponentName!: Phaser.GameObjects.BitmapText;
@@ -134,12 +136,20 @@ export class BattleScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setBackgroundColor("#283044");
+    this.cameras.main.fadeIn(260, 0, 0, 0); // fade in from the overworld
+    audio.playMusic(AudioKeys.MUSIC_BATTLE);
     this.buildArena();
     this.buildBoxAndMenus();
     this.bindKeys();
 
     this.refreshHp("player");
     this.refreshHp("opponent");
+    this.lastHp = {
+      player: this.battle.player.instance.currentStamina,
+      opponent: this.battle.opponent.instance.currentStamina,
+    };
+
+    this.introAnimate();
 
     const opp = this.battle.opponent.instance;
     const me = this.battle.player.instance;
@@ -149,6 +159,17 @@ export class BattleScene extends Phaser.Scene {
       : [{ text: `A wild ${opp.nickname} (Lv ${opp.level}) appeared!` }];
     intro.push({ text: `Go, ${me.nickname}!` });
     this.playSteps(intro, () => this.enterCommand());
+  }
+
+  /** Brief entrance: the battlers slide in from off-stage and fade up. */
+  private introAnimate(): void {
+    const slide = (sprite: Phaser.GameObjects.Sprite, fromDx: number) => {
+      const targetX = sprite.x;
+      sprite.setX(targetX + fromDx).setAlpha(0);
+      this.tweens.add({ targets: sprite, x: targetX, alpha: 1, duration: 300, ease: "Quad.easeOut" });
+    };
+    slide(this.sprites.opponent, 90); // in from the right
+    slide(this.sprites.player, -90); // in from the left
   }
 
   update(): void {
@@ -276,13 +297,16 @@ export class BattleScene extends Phaser.Scene {
 
   private handleCommandInput(): void {
     const last = COMMANDS.length - 1;
+    const before = this.commandIndex;
     if (this.pressed("left") && this.commandIndex % 2 === 1) this.commandIndex--;
     else if (this.pressed("right") && this.commandIndex % 2 === 0 && this.commandIndex < last) this.commandIndex++;
     else if (this.pressed("up") && this.commandIndex >= 2) this.commandIndex -= 2;
     else if (this.pressed("down") && this.commandIndex + 2 <= last) this.commandIndex += 2;
+    if (this.commandIndex !== before) audio.sfx(AudioKeys.SFX_MOVE);
     this.moveCommandCursor();
 
     if (!this.pressed("confirm")) return;
+    audio.sfx(AudioKeys.SFX_CONFIRM);
     switch (COMMANDS[this.commandIndex]) {
       case "Perform":
         this.enterTechnique();
@@ -339,15 +363,21 @@ export class BattleScene extends Phaser.Scene {
 
   private handleTechniqueInput(): void {
     if (this.pressed("cancel")) {
+      audio.sfx(AudioKeys.SFX_CANCEL);
       this.enterCommand();
       return;
     }
     const count = this.techniqueIds.length;
+    const before = this.techIndex;
     if (this.pressed("up") && this.techIndex > 0) this.techIndex--;
     else if (this.pressed("down") && this.techIndex + 1 < count) this.techIndex++;
+    if (this.techIndex !== before) audio.sfx(AudioKeys.SFX_MOVE);
     this.moveTechCursor();
 
-    if (this.pressed("confirm")) this.performTechnique(this.techniqueIds[this.techIndex]);
+    if (this.pressed("confirm")) {
+      audio.sfx(AudioKeys.SFX_CONFIRM);
+      this.performTechnique(this.techniqueIds[this.techIndex]);
+    }
   }
 
   // --- Turn resolution -------------------------------------------------------
@@ -394,14 +424,20 @@ export class BattleScene extends Phaser.Scene {
 
   private handleSwitchInput(): void {
     if (this.switchVoluntary && this.pressed("cancel")) {
+      audio.sfx(AudioKeys.SFX_CANCEL);
       this.enterCommand();
       return;
     }
     const count = Math.min(this.switchOptions.length, TECH_POS.length);
+    const before = this.techIndex;
     if (this.pressed("up") && this.techIndex > 0) this.techIndex--;
     else if (this.pressed("down") && this.techIndex + 1 < count) this.techIndex++;
+    if (this.techIndex !== before) audio.sfx(AudioKeys.SFX_MOVE);
     this.moveTechCursor();
-    if (this.pressed("confirm")) this.doSwitch(this.switchOptions[this.techIndex]);
+    if (this.pressed("confirm")) {
+      audio.sfx(AudioKeys.SFX_CONFIRM);
+      this.doSwitch(this.switchOptions[this.techIndex]);
+    }
   }
 
   private doSwitch(partyIndex: number): void {
@@ -411,9 +447,10 @@ export class BattleScene extends Phaser.Scene {
     this.battle.player = makeBattler(inst);
     this.battle.outcome = "ongoing";
     this.participants.add(inst);
-    this.sprites.player.setAlpha(1).setTint(genreColor(this.battle.player.genres[0]));
+    this.sprites.player.setAlpha(1).setY(104).setTint(genreColor(this.battle.player.genres[0]));
     this.playerName.setText(`${inst.nickname}  Lv${inst.level}`);
     this.refreshHp("player");
+    this.lastHp.player = inst.currentStamina;
     // A voluntary switch spends the turn — the opponent gets to act. A forced
     // switch (after a faint) resumes the player's command on the new turn.
     this.runMessages([`Go, ${inst.nickname}!`], () => (voluntary ? this.opponentCounter() : this.enterCommand()));
@@ -453,14 +490,20 @@ export class BattleScene extends Phaser.Scene {
 
   private handleBagInput(): void {
     if (this.pressed("cancel")) {
+      audio.sfx(AudioKeys.SFX_CANCEL);
       this.enterCommand();
       return;
     }
     const count = Math.min(this.bagItems.length, TECH_POS.length);
+    const before = this.techIndex;
     if (this.pressed("up") && this.techIndex > 0) this.techIndex--;
     else if (this.pressed("down") && this.techIndex + 1 < count) this.techIndex++;
+    if (this.techIndex !== before) audio.sfx(AudioKeys.SFX_MOVE);
     this.moveTechCursor();
-    if (this.pressed("confirm")) this.useBattleItem(this.bagItems[this.techIndex]);
+    if (this.pressed("confirm")) {
+      audio.sfx(AudioKeys.SFX_CONFIRM);
+      this.useBattleItem(this.bagItems[this.techIndex]);
+    }
   }
 
   /** Apply an item in battle by its effect; all uses cost the player's turn. */
@@ -521,7 +564,7 @@ export class BattleScene extends Phaser.Scene {
 
     if (result.success) {
       const dest = recruit(this.party, this.registry.get("roster") ?? [], opp);
-      steps.push({ text: "They want to join your band!" });
+      steps.push({ text: "They want to join your band!", apply: () => audio.sfx(AudioKeys.SFX_RECRUIT) });
       steps.push({
         text: dest === "party" ? `${opp.nickname} joined the band!` : `${opp.nickname} was sent to the roster.`,
       });
@@ -573,26 +616,28 @@ export class BattleScene extends Phaser.Scene {
   /** Current opponent fainted: award XP, then send the next one or finish. */
   private handleOpponentDefeated(): void {
     const reward = xpReward(this.battle.opponent.instance);
-    const messages: string[] = [];
+    const steps: Step[] = [];
     for (const inst of this.participants) {
       if (inst.currentStamina <= 0) continue;
-      messages.push(`${inst.nickname} gained ${reward} XP!`);
+      steps.push({ text: `${inst.nickname} gained ${reward} XP!` });
       for (const up of awardXp(inst, reward)) {
-        messages.push(`${inst.nickname} grew to Lv ${up.level}!`);
-        for (const id of up.forgot) messages.push(`${inst.nickname} forgot ${techName(id)}.`);
-        for (const id of up.learned) messages.push(`${inst.nickname} learned ${techName(id)}!`);
+        steps.push({ text: `${inst.nickname} grew to Lv ${up.level}!`, apply: () => audio.sfx(AudioKeys.SFX_LEVELUP) });
+        for (const id of up.forgot) steps.push({ text: `${inst.nickname} forgot ${techName(id)}.` });
+        for (const id of up.learned) steps.push({ text: `${inst.nickname} learned ${techName(id)}!` });
       }
     }
     this.refreshHp("player"); // max stamina may have grown
+    this.lastHp.player = this.battle.player.instance.currentStamina;
     this.playerName.setText(`${this.battle.player.instance.nickname}  Lv${this.battle.player.instance.level}`);
 
+    this.phase = "busy";
     if (this.opponentIndex + 1 < this.opponents.length) {
-      this.runMessages(messages, () => this.sendNextOpponent());
+      this.playSteps(steps, () => this.sendNextOpponent());
     } else if (this.trainer) {
-      this.runMessages(messages, () => this.finishTrainerVictory());
+      this.playSteps(steps, () => this.finishTrainerVictory());
     } else {
       console.log(`battle outcome: player_won (xp ${reward})`);
-      this.runMessages(messages, () => this.endBattle());
+      this.playSteps(steps, () => this.endBattle());
     }
   }
 
@@ -602,9 +647,10 @@ export class BattleScene extends Phaser.Scene {
     const next = this.opponents[this.opponentIndex];
     this.battle.opponent = makeBattler(next);
     this.battle.outcome = "ongoing";
-    this.sprites.opponent.setAlpha(1).setTint(genreColor(this.battle.opponent.genres[0]));
+    this.sprites.opponent.setAlpha(1).setY(56).setTint(genreColor(this.battle.opponent.genres[0]));
     this.opponentName.setText(`${next.nickname}  Lv${next.level}`);
     this.refreshHp("opponent");
+    this.lastHp.opponent = next.currentStamina;
     this.runMessages([`${this.trainer?.name ?? "Wild"} sent out ${next.nickname}!`], () => this.enterCommand());
   }
 
@@ -643,8 +689,12 @@ export class BattleScene extends Phaser.Scene {
     healParty(this.party); // patched up on the way back
     console.log("battle outcome: player_lost");
     this.runMessages(["All your musicians fainted!", "You head back to the studio..."], () => {
-      this.scene.start("OverworldScene", { map: "studio", entry: "studio_entry" });
-      this.scene.stop();
+      const cam = this.cameras.main;
+      cam.fadeOut(300, 0, 0, 0);
+      cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+        this.scene.start("OverworldScene", { map: "studio", entry: "studio_entry" });
+        this.scene.stop();
+      });
     });
   }
 
@@ -659,7 +709,7 @@ export class BattleScene extends Phaser.Scene {
           steps.push({ text: `${this.label(ev.side)}'s technique missed!` });
           break;
         case "damage":
-          steps.push({ apply: () => this.setHp(ev.target, ev.remaining, ev.max), delay: 350 });
+          steps.push({ apply: () => this.onDamage(ev.target, ev.amount, ev.remaining, ev.max), delay: 400 });
           break;
         case "effectiveness":
           steps.push({ text: ev.multiplier > 1 ? "It's a showstopper!" : "It falls flat..." });
@@ -668,7 +718,13 @@ export class BattleScene extends Phaser.Scene {
           steps.push({ text: `${this.label(ev.target)}'s ${ev.stat} ${ev.delta > 0 ? "rose" : "fell"}!` });
           break;
         case "faint":
-          steps.push({ text: `${this.label(ev.side)} fainted!`, apply: () => this.dim(ev.side) });
+          steps.push({
+            text: `${this.label(ev.side)} fainted!`,
+            apply: () => {
+              audio.sfx(AudioKeys.SFX_FAINT);
+              this.faintDrop(ev.side);
+            },
+          });
           break;
         case "run":
           steps.push({ text: ev.success ? "Got away safely!" : "Couldn't get away!" });
@@ -704,7 +760,7 @@ export class BattleScene extends Phaser.Scene {
       const step = steps[i++];
       step.apply?.();
       if (step.text) this.message.setText(step.text);
-      this.time.delayedCall(step.delay ?? (step.text ? 900 : 300), next);
+      this.time.delayedCall(step.delay ?? (step.text ? 800 : 280), next);
     };
     next();
   }
@@ -723,11 +779,15 @@ export class BattleScene extends Phaser.Scene {
     this.exitTo();
   }
 
-  /** Resume the parent (overworld) and close the battle. */
+  /** Fade out, then resume the parent (overworld) and close the battle. */
   private exitTo(): void {
     this.phase = "over";
-    this.scene.resume(this.parent);
-    this.scene.stop();
+    const cam = this.cameras.main;
+    cam.fadeOut(220, 0, 0, 0);
+    cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      this.scene.resume(this.parent); // overworld's "resume" handler restores its music
+      this.scene.stop();
+    });
   }
 
   // --- Helpers ---------------------------------------------------------------
@@ -737,8 +797,47 @@ export class BattleScene extends Phaser.Scene {
     return side === "opponent" ? `Wild ${name}` : name;
   }
 
-  private dim(side: Side): void {
-    this.sprites[side].setAlpha(0.3); // fade the fainted battler
+  /** Damage landed: update the bar, flash + shake the target, float a number. */
+  private onDamage(side: Side, amount: number, remaining: number, max: number): void {
+    this.setHp(side, remaining, max);
+    if (amount <= 0) {
+      this.lastHp[side] = remaining;
+      return;
+    }
+    audio.sfx(AudioKeys.SFX_HIT);
+    this.hitFlash(side);
+    this.floatDamage(side, amount);
+    this.lastHp[side] = remaining;
+  }
+
+  /** A quick white flash + side-to-side shake on the struck battler. */
+  private hitFlash(side: Side): void {
+    const s = this.sprites[side];
+    s.setTintFill(0xffffff);
+    this.time.delayedCall(70, () => s.setTint(genreColor(this.battle[side].genres[0])));
+    this.tweens.add({ targets: s, x: s.x - 4, duration: 45, yoyo: true, repeat: 2 });
+  }
+
+  /** A rising, fading "-N" damage number over the struck battler. */
+  private floatDamage(side: Side, amount: number): void {
+    const s = this.sprites[side];
+    const label = createText(this, Math.round(s.x), Math.round(s.y - 28), `-${amount}`, {
+      color: 0xff5555,
+      origin: 0.5,
+    }).setDepth(30);
+    this.tweens.add({
+      targets: label,
+      y: label.y - 14,
+      alpha: { from: 1, to: 0 },
+      duration: 520,
+      ease: "Quad.easeOut",
+      onComplete: () => label.destroy(),
+    });
+  }
+
+  private faintDrop(side: Side): void {
+    const s = this.sprites[side];
+    this.tweens.add({ targets: s, y: s.y + 8, alpha: 0.25, duration: 280, ease: "Quad.easeIn" });
   }
 
   /** True once this frame if any bound key for the action was just pressed. */
