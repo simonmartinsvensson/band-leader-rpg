@@ -13,6 +13,7 @@ import { CareerScene } from "./scenes/CareerScene";
 import { PauseScene } from "./scenes/PauseScene";
 import { initTouchControls } from "./ui/touchControls";
 import { audio } from "./systems/audio";
+import "./ui/buildStamp"; // DEV build-timestamp label — remove this line + the file to drop it
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,

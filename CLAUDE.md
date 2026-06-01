@@ -511,6 +511,18 @@ nearest-neighbour, staying crisp like the tiles.
 - Non-text UI chrome (boxes, the dialogue "more" arrow) is drawn with Graphics/Shapes, which are
   already crisp.
 
+## Build-timestamp label (dev only)
+
+A tiny `patched HH:MM YYYY-MM-DD` label sits in the bottom-left corner (above everything, on
+desktop and mobile) so you can confirm on a device whether you're looking at the latest deploy.
+The timestamp is frozen **at build time** (or dev-server start) via the Vite `define` for
+`__BUILD_TIME__` in `vite.config.ts`, and rendered by the self-contained module
+**`src/ui/buildStamp.ts`** (a plain DOM overlay; `pointer-events: none`).
+
+**To remove it:** delete `src/ui/buildStamp.ts` and the one `import "./ui/buildStamp";` line in
+`src/main.ts`. (The `__BUILD_TIME__` define in `vite.config.ts` is then unused — harmless if left,
+or drop it too.)
+
 ## Commands
 
 - `npm run dev` — start the Vite dev server with hot reload.
