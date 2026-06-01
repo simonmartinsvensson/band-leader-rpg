@@ -7,7 +7,7 @@ export const MAX_PARTY = 6;
 
 /** The starting band. Rifflet is low-level so it level-ups (and learns) early. */
 export function createStarterParty(): MusicianInstance[] {
-  return [createInstance(SPECIES.rifflet, 4), createInstance(SPECIES.crooner, 8)];
+  return [createInstance(SPECIES.rifflet, 5), createInstance(SPECIES.crooner, 8)];
 }
 
 export function isFaintedInstance(m: MusicianInstance): boolean {

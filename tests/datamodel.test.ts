@@ -16,6 +16,7 @@ import {
   xpToNextLevel,
   MAX_TECHNIQUES,
 } from "../src/systems/stats";
+import { BALANCE } from "../src/data/balance";
 import type { MusicianSpecies } from "../src/types/musician";
 
 describe("genre effectiveness lookup", () => {
@@ -69,7 +70,9 @@ describe("stat formula", () => {
     const lvl = 50;
     const s = SPECIES.rifflet; // skill 60, stamina 45
     expect(computeStats(s, lvl).skill).toBe(Math.floor((2 * 60 * lvl) / 100) + 5);
-    expect(computeStats(s, lvl).stamina).toBe(Math.floor((2 * 45 * lvl) / 100) + lvl + 10);
+    // Stamina pool is scaled by the central balance knob.
+    const baseStamina = Math.floor((2 * 45 * lvl) / 100) + lvl + 10;
+    expect(computeStats(s, lvl).stamina).toBe(Math.floor(baseStamina * BALANCE.staminaMultiplier));
   });
 });
 

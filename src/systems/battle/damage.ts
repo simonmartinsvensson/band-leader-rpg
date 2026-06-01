@@ -16,6 +16,8 @@ export interface DamageInput {
   effectiveness: number;
   /** Damage spread factor, 0.85..1.0. */
   randomFactor: number;
+  /** Global balance multiplier on the final number (default 1). */
+  outputMultiplier?: number;
 }
 
 /**
@@ -26,7 +28,8 @@ export function computeDamage(input: DamageInput): number {
   if (input.power <= 0 || input.effectiveness <= 0) return 0;
   const levelTerm = Math.floor((2 * input.level) / 5) + 2;
   const base = Math.floor(Math.floor((levelTerm * input.power * input.attack) / input.defense) / 50) + 2;
-  const modified = Math.floor(base * input.stab * input.effectiveness * input.randomFactor);
+  const mult = input.outputMultiplier ?? 1;
+  const modified = Math.floor(base * input.stab * input.effectiveness * input.randomFactor * mult);
   return Math.max(1, modified);
 }
 

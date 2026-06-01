@@ -31,8 +31,8 @@ export const TRAINERS: Record<string, Trainer> = {
     id: "rival_max",
     name: "Rival Max",
     team: [
-      { species: "grooveling", level: 6 },
-      { species: "synthling", level: 7 },
+      { species: "grooveling", level: 5 },
+      { species: "synthling", level: 6 },
     ],
     reward: 300,
     intro: ["Think you can lead a band?", "My crew will blow you off the stage!"],
@@ -44,8 +44,8 @@ export const TRAINERS: Record<string, Trainer> = {
     id: "jazz_headliner",
     name: "Headliner Vera",
     team: [
-      { species: "crooner", level: 9 },
-      { species: "fusionaut", level: 10 },
+      { species: "crooner", level: 8 },
+      { species: "fusionaut", level: 9 },
     ],
     reward: 800,
     intro: ["Welcome to The Blue Note.", "Show me your band can swing."],

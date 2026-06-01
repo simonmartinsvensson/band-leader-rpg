@@ -1,6 +1,7 @@
 import type { MusicianInstance } from "../types/musician";
 import { getSpecies } from "../data/species";
 import { computeStats, xpForLevel, MAX_TECHNIQUES } from "./stats";
+import { BALANCE } from "../data/balance";
 
 export const MAX_LEVEL = 100;
 /** XP yielded per level of the defeated opponent. */
@@ -16,7 +17,7 @@ export interface LevelUp {
 
 /** XP awarded for defeating an opponent. */
 export function xpReward(opponent: MusicianInstance): number {
-  return Math.max(1, Math.round(opponent.level * XP_PER_OPPONENT_LEVEL));
+  return Math.max(1, Math.round(opponent.level * XP_PER_OPPONENT_LEVEL * BALANCE.xpRewardMultiplier));
 }
 
 /**

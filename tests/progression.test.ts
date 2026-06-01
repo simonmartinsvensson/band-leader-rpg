@@ -9,11 +9,16 @@ import {
 } from "../src/systems/party";
 import { createInstance, computeStats, xpForLevel } from "../src/systems/stats";
 import { SPECIES } from "../src/data/species";
+import { BALANCE } from "../src/data/balance";
 
 describe("xpReward", () => {
-  it("scales with the opponent's level", () => {
-    expect(xpReward(createInstance(SPECIES.grooveling, 3))).toBe(39);
-    expect(xpReward(createInstance(SPECIES.grooveling, 6))).toBe(78);
+  it("scales with the opponent's level (and the balance multiplier)", () => {
+    const expected = (lv: number) => Math.round(lv * 13 * BALANCE.xpRewardMultiplier);
+    expect(xpReward(createInstance(SPECIES.grooveling, 3))).toBe(expected(3));
+    expect(xpReward(createInstance(SPECIES.grooveling, 6))).toBe(expected(6));
+    expect(xpReward(createInstance(SPECIES.grooveling, 6))).toBeGreaterThan(
+      xpReward(createInstance(SPECIES.grooveling, 3)),
+    );
   });
 });
 

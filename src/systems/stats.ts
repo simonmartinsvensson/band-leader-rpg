@@ -1,5 +1,6 @@
 import type { MusicianInstance, MusicianSpecies } from "../types/musician";
 import type { Stats } from "../types/stats";
+import { BALANCE } from "../data/balance";
 
 /** Maximum techniques a musician can know at once. */
 export const MAX_TECHNIQUES = 4;
@@ -12,8 +13,11 @@ export const MAX_TECHNIQUES = 4;
 export function computeStats(species: MusicianSpecies, level: number): Stats {
   const base = species.baseStats;
   const grow = (b: number) => Math.floor((2 * b * level) / 100) + 5;
+  // Stamina (HP) pool is scaled by the global balance knob so hits aren't
+  // one-shots; the other stats are unchanged.
+  const baseStamina = Math.floor((2 * base.stamina * level) / 100) + level + 10;
   return {
-    stamina: Math.floor((2 * base.stamina * level) / 100) + level + 10,
+    stamina: Math.floor(baseStamina * BALANCE.staminaMultiplier),
     skill: grow(base.skill),
     composure: grow(base.composure),
     tempo: grow(base.tempo),

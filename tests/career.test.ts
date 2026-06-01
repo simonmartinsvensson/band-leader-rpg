@@ -30,10 +30,11 @@ describe("defeated trainers & residencies", () => {
 describe("buildTrainerTeam", () => {
   it("builds live instances at the trainer's levels", () => {
     const team = buildTrainerTeam(TRAINERS.jazz_headliner);
+    const [m0, m1] = TRAINERS.jazz_headliner.team;
     expect(team).toHaveLength(2);
-    expect(team[0].speciesId).toBe("crooner");
-    expect(team[0].level).toBe(9);
-    expect(team[1].level).toBe(10);
+    expect(team[0].speciesId).toBe(m0.species);
+    expect(team[0].level).toBe(m0.level);
+    expect(team[1].level).toBe(m1.level);
     expect(team[0].currentStamina).toBe(team[0].stats.stamina); // full
   });
 });

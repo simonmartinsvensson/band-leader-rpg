@@ -4,6 +4,7 @@ import { getSpecies } from "../../data/species";
 import { getTechnique } from "../../data/techniques";
 import { getEffectivenessAgainst } from "../genres";
 import { computeDamage, stageMultiplier, STAB } from "./damage";
+import { BALANCE } from "../../data/balance";
 import type { Battler, BattleAction, BattleEvent, BattleState, Side } from "./types";
 
 type Rng = () => number;
@@ -77,6 +78,8 @@ function performTechnique(state: BattleState, side: Side, techniqueId: string, e
     const effectiveness = getEffectivenessAgainst(tech.genre, defender.genres);
     const stab = attacker.genres.includes(tech.genre) ? STAB : 1;
     const randomFactor = 0.85 + rng() * 0.15;
+    // The player's party and opponents take/deal scaled damage (balance knobs).
+    const outputMultiplier = side === "player" ? BALANCE.playerDamageMultiplier : BALANCE.enemyDamageMultiplier;
     const amount = computeDamage({
       level: attacker.instance.level,
       power: tech.power,
@@ -85,6 +88,7 @@ function performTechnique(state: BattleState, side: Side, techniqueId: string, e
       stab,
       effectiveness,
       randomFactor,
+      outputMultiplier,
     });
     defender.instance.currentStamina = Math.max(0, defender.instance.currentStamina - amount);
     events.push({
