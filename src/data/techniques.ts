@@ -1,21 +1,29 @@
 import type { Technique } from "../types/technique";
 
 /**
- * The technique pool (move equivalents). Two per genre; a couple are status
- * techniques (power 0) with buff/debuff effects, one has raised priority.
- * Referenced by id from species learnsets (src/data/species.ts).
+ * The technique pool (the band-leader take on Pokémon "moves"). Two per genre,
+ * each genre with its own feel:
+ *
+ *   • Jazz   — finesse: a dependable foundation + a risky virtuoso flourish.
+ *   • Rock   — spectacle: a staple hit + a reckless, high-power gamble.
+ *   • Classical — dynamics: build yourself up, then strike at full force.
+ *   • Funk   — the groove: lock the opponent's tempo + a signature smack.
+ *   • Electronic — the machine: a fast first-strike + the massive payoff.
+ *   • Folk   — warmth: a steady reliable pick + rally the band's nerve.
+ *
+ * `name` is display flavour; the id (referenced by species learnsets in
+ * src/data/species.ts) and the mechanical fields are the contract.
  */
 export const TECHNIQUES: Record<string, Technique> = {
-  // Jazz
-  blue_note: { id: "blue_note", name: "Blue Note", genre: "jazz", power: 50, accuracy: 1.0, staminaCost: 8, priority: 0 },
+  // Jazz — finesse
+  blue_note: { id: "blue_note", name: "Walking Bassline", genre: "jazz", power: 50, accuracy: 1.0, staminaCost: 8, priority: 0 },
   improv_solo: { id: "improv_solo", name: "Improv Solo", genre: "jazz", power: 75, accuracy: 0.9, staminaCost: 15, priority: 0 },
 
-  // Rock
+  // Rock — spectacle
   power_chord: { id: "power_chord", name: "Power Chord", genre: "rock", power: 60, accuracy: 0.95, staminaCost: 10, priority: 0 },
   stage_dive: { id: "stage_dive", name: "Stage Dive", genre: "rock", power: 90, accuracy: 0.8, staminaCost: 20, priority: 0 },
 
-  // Classical
-  sonata: { id: "sonata", name: "Sonata", genre: "classical", power: 65, accuracy: 0.95, staminaCost: 12, priority: 0 },
+  // Classical — dynamics
   crescendo: {
     id: "crescendo",
     name: "Crescendo",
@@ -26,11 +34,12 @@ export const TECHNIQUES: Record<string, Technique> = {
     priority: 0,
     effect: { kind: "buff", stat: "skill", stages: 1, target: "self", chance: 1 },
   },
+  sonata: { id: "sonata", name: "Fortissimo", genre: "classical", power: 65, accuracy: 0.95, staminaCost: 12, priority: 0 },
 
-  // Funk
+  // Funk — the groove
   groove_lock: {
     id: "groove_lock",
-    name: "Groove Lock",
+    name: "In the Pocket",
     genre: "funk",
     power: 55,
     accuracy: 1.0,
@@ -40,15 +49,15 @@ export const TECHNIQUES: Record<string, Technique> = {
   },
   slap_bass: { id: "slap_bass", name: "Slap Bass", genre: "funk", power: 75, accuracy: 0.9, staminaCost: 15, priority: 0 },
 
-  // Electronic
+  // Electronic — the machine
+  sync_pulse: { id: "sync_pulse", name: "Glitch", genre: "electronic", power: 45, accuracy: 1.0, staminaCost: 7, priority: 1 },
   drop: { id: "drop", name: "The Drop", genre: "electronic", power: 95, accuracy: 0.75, staminaCost: 22, priority: 0 },
-  sync_pulse: { id: "sync_pulse", name: "Sync Pulse", genre: "electronic", power: 45, accuracy: 1.0, staminaCost: 7, priority: 1 },
 
-  // Folk
-  fingerpick: { id: "fingerpick", name: "Fingerpick", genre: "folk", power: 50, accuracy: 1.0, staminaCost: 8, priority: 0 },
+  // Folk — warmth
+  fingerpick: { id: "fingerpick", name: "Fingerpicking", genre: "folk", power: 50, accuracy: 1.0, staminaCost: 8, priority: 0 },
   campfire_song: {
     id: "campfire_song",
-    name: "Campfire Song",
+    name: "Campfire Singalong",
     genre: "folk",
     power: 0,
     accuracy: 1.0,
