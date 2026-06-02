@@ -209,10 +209,14 @@ the route's encounter zone + the hub/sign dialogues.
   next `update()` so it never happens mid-tween. Initial launch uses no data → `town` /
   `player_start`.
 - **Encounter zones** — data-driven in `src/data/encounters.ts`: `ENCOUNTER_ZONES[id] = { rate
-  (0..1 per step), minLevel, maxLevel, musicians: string[] (species ids) }`. When a step finishes
-  on an encounter tile, `rollEncounter(zone)` (`src/systems/encounters.ts`, pure + unit-tested)
-  rolls; on a hit the overworld starts a real battle (see Recruiting & encounters). Add zones to
-  the data table; reference them from an `encounter` map object's `zone` prop.
+  (0..1 per step), minLevel, maxLevel, musicians: string[] (the common pool), rare?: string[],
+  rareChance?: number (default `RARE_CHANCE` 0.15) }`. When a step finishes on an encounter tile,
+  `rollEncounter(zone)` (`src/systems/encounters.ts`, pure + unit-tested) rolls rate → (rare-vs-
+  common, only when a `rare` pool exists) → pick; on a hit the overworld starts a real battle (see
+  Recruiting & encounters). **Signature** musicians live in `rare` pools — including two signature
+  zones in the residency-gated reward areas (`blue_note_backstage` in the VIP lounge → Cassette,
+  `warehouse_afterhours` in the backstage → Aurora). Add zones to the data table; reference them
+  from an `encounter` map object's `zone` prop.
 
 ## NPCs & dialogue
 
@@ -252,8 +256,10 @@ formulas/lookups in `src/systems`. Run `npm run check:data` for a sanity readout
 
 **Content** (`src/data`): `genres.ts` (the `GENRES` effectiveness chart — a consistent
 hexagonal wheel, each genre strong vs the next two / weak vs the previous two), `techniques.ts`
-(18 techniques, 3 per genre), `species.ts` (14 species across all genres, three
-dual-genre). Each exposes a `*_LIST` and a `get*(id)` lookup.
+(30 techniques, 5 per genre — a core trio + an expanded pair), `species.ts` (~50 species across
+all genres incl. ~10 dual-genre and a handful of high-difficulty **signatures**, e.g. Cassette,
+the echo of Cass's old sound). Each exposes a `*_LIST` and a `get*(id)` lookup. `tests/
+datamodel.test.ts` guards roster volume + that every species/technique/encounter reference resolves.
 
 **Systems** (`src/systems`):
 
