@@ -629,6 +629,87 @@ from the GitHub Pages subpath.
 `sfx_faint`, `sfx_levelup`, `sfx_recruit`). To use real audio, drop files with these same keys
 into `public/assets/audio/` (any browser-playable format) — the game references sounds only by key.
 
+## Asset-swap guide (real art & audio)
+
+Every asset is a placeholder, but the game is built so real art/audio is a **drop-in
+replacement**: keep the same file name (or key), dimensions, and frame layout, and **no code
+changes are needed**. This is enforced by the asset-key contract — every loader key + path lives
+once in `src/data/assets.ts`, and nothing in `src/` ever hardcodes an asset path:
+
+- Images/spritesheets are loaded from `SPRITESHEETS`, `IMAGES`, and `FONT_IMAGE` (the font is
+  loaded first, in `BootScene`, via `FONT_IMAGE.key`/`.path`); audio from `AUDIO`. All four live
+  in `assets.ts`.
+- Everything else references assets only by the `AssetKeys` / `AudioKeys` constants and the frame
+  enums (`PlayerFrame`, `TileFrame`). (Audit: the only literal asset path anywhere is in the four
+  arrays in `assets.ts` and the `assets/...` strings inside the `scripts/gen-*.mjs` generators,
+  which write the placeholders — not runtime code.)
+- Paths are resolved against Vite's `BASE_URL`, so swaps work in dev and on the Pages subpath.
+
+To swap an asset you can either **(a)** overwrite the file in `public/assets/` keeping its exact
+name + dimensions (simplest — nothing else to touch), or **(b)** point the path in `assets.ts` at
+a new file. Prefer (a). After swapping art, run `npm run smoke` to confirm textures still load.
+
+### Visual assets
+
+| Key     | File                  | Loaded as   | Exact size | Format          | Layout / semantics that MUST be preserved |
+| ------- | --------------------- | ----------- | ---------- | --------------- | ----------------------------------------- |
+| `font`  | `assets/font.png`     | image       | **96×48**  | PNG RGBA, white glyphs on transparent | RetroFont atlas: 6×8 px cells, ASCII 32–126 row-major, 16 cells/row (6 rows). Glyphs drawn white so they can be tinted. Metrics are mirrored in `src/ui/font.ts` — change one, change both. |
+| `tiles` | `assets/tileset.png`  | spritesheet | **64×16**  | PNG RGBA        | 4 frames of 16×16 in one strip, **in order**: `0` grass, `1` path, `2` wall, `3` water (`TileFrame`). Maps reference these by GID (firstgid 1 → grass). Add tile *types* by widening the strip + extending `TileFrame` and the GID map in `scripts/gen-map.mjs`, not by reordering. |
+| `player`| `assets/player.png`   | spritesheet | **64×16**  | PNG RGBA        | 4 frames of 16×16, **one static facing per frame, in order**: `0` down, `1` up, `2` left, `3` right (`PlayerFrame`). Not a walk-cycle sheet — one frame per direction. |
+| `npc`   | `assets/npc.png`      | image       | **16×16**  | PNG RGBA        | Single generic frame. Per-NPC variety comes from a `tint` (`#rrggbb`) applied at runtime (`NPC` config / map object prop), so a neutral light-grey sprite tints best. |
+
+Notes on visual swaps:
+
+- **Frame size is fixed at 16×16** (`FRAME_CONFIG` = `TILE_SIZE`). A spritesheet's total width must
+  be `16 × frameCount`; height 16. Keep `pixelArt`/nearest-neighbour art (no anti-aliasing) so it
+  stays crisp when scaled from the 240×160 logical resolution.
+- **Musicians have no sprites of their own.** `BattleScene` renders the opponent with the `npc`
+  texture and the player's active musician with `player` frame 0, each **tinted by its genre color**
+  (`genreColor`). So real "musician art" is *not* a drop-in swap — it would need per-species sprites
+  (~50), a new `AssetKeys`/loader entry per sprite (or one packed sheet + a `spriteFrame` field on
+  `MusicianSpecies`), and a small `BattleScene` change to pick the sprite instead of tinting. That's
+  a feature, not a swap; until then, replacing `npc.png`/`player.png` reskins every musician at once.
+- **UI chrome** (dialogue/menu boxes, HP bars, the "more" arrow, loading bar) is drawn with Phaser
+  Graphics/Shapes, not textures — there are no UI image assets to swap. Restyle it in the `src/ui`
+  components if desired.
+
+### Sourcing real third-party art
+
+The placeholder layout is intentionally minimal (4 named tiles; 4 single-direction player frames),
+so an off-the-shelf CC0 pack (Kenney, LPC, etc.) will **not** drop in unchanged — those are large
+multi-tile/multi-frame atlases in different layouts. To use one you must first recomposite/crop it
+to the exact strips + order above (any image editor), then save over the placeholder file keeping
+the name + dimensions. Recommended CC0 sources: **Kenney.nl** (CC0, 16×16 packs available),
+**OpenGameArt.org** (filter by CC0/CC-BY — mind attribution), **itch.io** free pixel-art packs
+(check each pack's license). Always keep the chosen license/attribution note in the repo. The
+project font is **original CC0 art** authored here (see header of `scripts/gen-font.mjs`).
+
+### Audio assets
+
+All audio is **mono, 11025 Hz, 16-bit PCM WAV** placeholder chiptune (`scripts/gen-audio.mjs`),
+under `public/assets/audio/<key>.<ext>`. Real audio is a **drop-in**: the loader accepts any
+browser-playable format (WAV/MP3/OGG), files can be any sample rate / stereo / length, and the
+`AUDIO` array derives paths from `AudioKeys` — so dropping in `music_overworld.wav` (or changing
+the `.wav` extension in that one array) is all it takes. The per-area slots are wired and ready:
+
+| Key (`AudioKeys`)  | Kind        | Played by / area | Loop? |
+| ------------------ | ----------- | ---------------- | ----- |
+| `music_overworld`  | music       | `TitleScene` + the overworld (town, streets, parks, hubs, districts) | yes |
+| `music_battle`     | music       | `BattleScene` (all battles) | yes |
+| `music_venue`      | music       | venue maps: `jazz_club`, `vip_lounge`, `warehouse`, `backstage` | yes |
+| `sfx_move`         | SFX one-shot| each overworld step | — |
+| `sfx_confirm`      | SFX one-shot| menu confirm/select (all menus) | — |
+| `sfx_cancel`       | SFX one-shot| menu back/cancel | — |
+| `sfx_hit`          | SFX one-shot| a technique landing in battle | — |
+| `sfx_faint`        | SFX one-shot| a musician fainting | — |
+| `sfx_levelup`      | SFX one-shot| a level-up | — |
+| `sfx_recruit`      | SFX one-shot| a successful audition | — |
+
+Drop your own composed tracks in as `music_overworld` / `music_battle` / `music_venue` (looping
+files — keep loop points seamless) and they play in their areas immediately. The single mute/volume
+setting governs everything; music is mixed under SFX (see Audio). To add a *new* area track or SFX,
+add a key to `AudioKeys` and call `audio.playMusic(key)` / `audio.sfx(key)` where it should fire.
+
 ## Audio
 
 A small audio layer; the game references sounds only by key (`AudioKeys`), never by path.

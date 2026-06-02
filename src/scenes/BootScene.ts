@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { AssetKeys } from "../data/assets";
+import { FONT_IMAGE } from "../data/assets";
 import { registerPixelFont } from "../ui/font";
 
 /**
@@ -15,7 +15,7 @@ export class BootScene extends Phaser.Scene {
   preload(): void {
     // Same base-path handling as PreloadScene (dev "/" vs GitHub Pages subpath).
     this.load.setBaseURL(import.meta.env.BASE_URL);
-    this.load.image(AssetKeys.FONT, "assets/font.png");
+    this.load.image(FONT_IMAGE.key, FONT_IMAGE.path);
   }
 
   create(): void {

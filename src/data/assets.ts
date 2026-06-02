@@ -37,6 +37,14 @@ export const SPRITESHEETS = [
 /** Single-image assets to load: key -> file. */
 export const IMAGES = [{ key: AssetKeys.NPC, path: "assets/npc.png" }] as const;
 
+/**
+ * The bitmap-font atlas. Loaded separately (and first) in BootScene rather than
+ * via IMAGES, so even PreloadScene's loading bar can render crisp text. Kept
+ * here so the font path lives with every other asset path (no literal paths in
+ * scene code — swaps stay drop-in).
+ */
+export const FONT_IMAGE = { key: AssetKeys.FONT, path: "assets/font.png" } as const;
+
 /** Every placeholder is built on the 16x16 grid. */
 export const FRAME_CONFIG = { frameWidth: TILE_SIZE, frameHeight: TILE_SIZE } as const;
 
