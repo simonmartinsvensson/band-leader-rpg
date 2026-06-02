@@ -144,6 +144,31 @@ export const SPECIES: Record<string, MusicianSpecies> = {
   // Electronic
   bitling: { id: "bitling", name: "Bitling", genres: ["electronic"], baseStats: { stamina: 42, skill: 62, composure: 38, tempo: 66 }, learnset: { 1: ["bitcrush"], 6: ["sync_pulse"] }, recruitDifficulty: 0.4 },
   dubwave: { id: "dubwave", name: "Dubwave", genres: ["electronic"], baseStats: { stamina: 46, skill: 66, composure: 42, tempo: 64 }, learnset: { 1: ["bitcrush"], 6: ["sync_pulse"], 11: ["wobble_bass"] }, recruitDifficulty: 0.55 },
+
+  // === Roster expansion, batch 2: late-tier + dual-genre depth (rares in the
+  // higher zones; see src/data/encounters.ts). ===
+  // Rock
+  rifflord: { id: "rifflord", name: "Rifflord", genres: ["rock"], baseStats: { stamina: 54, skill: 66, composure: 46, tempo: 56 }, learnset: { 1: ["power_chord"], 6: ["feedback_wail"], 11: ["wall_of_sound"] }, recruitDifficulty: 0.5 },
+  crowdsurf: { id: "crowdsurf", name: "Crowdsurf", genres: ["rock", "funk"], baseStats: { stamina: 52, skill: 60, composure: 46, tempo: 58 }, learnset: { 1: ["garage_riff"], 5: ["slap_bass"], 9: ["stage_dive"] }, recruitDifficulty: 0.55 },
+  // Jazz
+  vibraphan: { id: "vibraphan", name: "Vibraphan", genres: ["jazz"], baseStats: { stamina: 52, skill: 56, composure: 52, tempo: 48 }, learnset: { 1: ["comping"], 5: ["blue_note"], 9: ["trading_fours"] }, recruitDifficulty: 0.4 },
+  saxophar: { id: "saxophar", name: "Saxophar", genres: ["jazz"], baseStats: { stamina: 54, skill: 62, composure: 50, tempo: 52 }, learnset: { 1: ["blue_note"], 6: ["improv_solo"], 11: ["trading_fours"] }, recruitDifficulty: 0.55 },
+  driftwood: { id: "driftwood", name: "Driftwood", genres: ["folk", "jazz"], baseStats: { stamina: 56, skill: 52, composure: 54, tempo: 46 }, learnset: { 1: ["fingerpick"], 5: ["comping"], 9: ["blue_note"] }, recruitDifficulty: 0.5 },
+  // Classical
+  concerta: { id: "concerta", name: "Concerta", genres: ["classical"], baseStats: { stamina: 58, skill: 56, composure: 66, tempo: 40 }, learnset: { 1: ["sonata"], 6: ["fugue"], 11: ["grand_finale"] }, recruitDifficulty: 0.55 },
+  choralis: { id: "choralis", name: "Choralis", genres: ["classical", "folk"], baseStats: { stamina: 58, skill: 50, composure: 64, tempo: 40 }, learnset: { 1: ["arpeggio"], 6: ["fugue"], 11: ["barn_burner"] }, recruitDifficulty: 0.5 },
+  maestoso: { id: "maestoso", name: "Maestoso", genres: ["classical"], baseStats: { stamina: 60, skill: 56, composure: 68, tempo: 38 }, learnset: { 1: ["sonata"], 6: ["fugue"], 11: ["grand_finale"] }, recruitDifficulty: 0.6 },
+  // Funk
+  bassquatch: { id: "bassquatch", name: "Bassquatch", genres: ["funk"], baseStats: { stamina: 56, skill: 60, composure: 48, tempo: 58 }, learnset: { 1: ["slap_bass"], 6: ["drop_the_one"], 11: ["p_funk"] }, recruitDifficulty: 0.5 },
+  discola: { id: "discola", name: "Discola", genres: ["funk", "electronic"], baseStats: { stamina: 50, skill: 60, composure: 44, tempo: 62 }, learnset: { 1: ["clavinet"], 5: ["sync_pulse"], 9: ["drop_the_one"] }, recruitDifficulty: 0.55 },
+  // Folk
+  mandolyn: { id: "mandolyn", name: "Mandolyn", genres: ["folk"], baseStats: { stamina: 60, skill: 48, composure: 56, tempo: 40 }, learnset: { 1: ["strum"], 5: ["fingerpick"], 9: ["barn_burner"] }, recruitDifficulty: 0.3 },
+  balladine: { id: "balladine", name: "Balladine", genres: ["folk"], baseStats: { stamina: 62, skill: 50, composure: 58, tempo: 42 }, learnset: { 1: ["fingerpick"], 6: ["hoedown"], 11: ["barn_burner"] }, recruitDifficulty: 0.45 },
+  // Electronic
+  synthwave: { id: "synthwave", name: "Synthwave", genres: ["electronic"], baseStats: { stamina: 46, skill: 64, composure: 42, tempo: 62 }, learnset: { 1: ["bitcrush"], 6: ["sync_pulse"], 11: ["drop"] }, recruitDifficulty: 0.5 },
+  glitchard: { id: "glitchard", name: "Glitchard", genres: ["electronic"], baseStats: { stamina: 44, skill: 66, composure: 40, tempo: 66 }, learnset: { 1: ["sync_pulse"], 6: ["bitcrush"], 11: ["wobble_bass"] }, recruitDifficulty: 0.55 },
+  modulord: { id: "modulord", name: "Modulord", genres: ["electronic"], baseStats: { stamina: 50, skill: 68, composure: 46, tempo: 64 }, learnset: { 1: ["sync_pulse"], 6: ["sidechain"], 11: ["drop"] }, recruitDifficulty: 0.7 },
+  technotron: { id: "technotron", name: "Technotron", genres: ["electronic", "classical"], baseStats: { stamina: 52, skill: 66, composure: 50, tempo: 58 }, learnset: { 1: ["sync_pulse"], 6: ["arpeggio"], 11: ["drop"] }, recruitDifficulty: 0.65 },
 };
 
 export const SPECIES_LIST = Object.values(SPECIES);

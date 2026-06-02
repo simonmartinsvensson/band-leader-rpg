@@ -25,7 +25,7 @@ export const ENCOUNTER_ZONES: Record<string, EncounterZone> = {
     minLevel: 5,
     maxLevel: 8,
     musicians: ["grooveling", "crooner", "balladeer", "scatling", "hummer", "bopling"],
-    rare: ["bebopper", "troubadyl"],
+    rare: ["bebopper", "troubadyl", "vibraphan"],
   },
   // The riverside park, between town and the warehouse venue. A step up in level
   // from the busking street, and home to the counters for the electronic venue:
@@ -36,7 +36,7 @@ export const ENCOUNTER_ZONES: Record<string, EncounterZone> = {
     minLevel: 9,
     maxLevel: 12,
     musicians: ["amplifret", "funkadel", "sonatina", "wanderlay"],
-    rare: ["bitling", "groovile"],
+    rare: ["bitling", "groovile", "synthwave", "glitchard", "modulord", "technotron"],
   },
   // --- Genre-district routes (opened by residency gates from town) ---
   // Rock Strip + Folk Riverside open after the Jazz Residency (player ~Lv9-12).
@@ -45,14 +45,14 @@ export const ENCOUNTER_ZONES: Record<string, EncounterZone> = {
     minLevel: 9,
     maxLevel: 13,
     musicians: ["rifflet", "amplifret", "garageling", "moshling"],
-    rare: ["voltaxe", "distortia"],
+    rare: ["voltaxe", "distortia", "rifflord", "crowdsurf"],
   },
   folk_route: {
     rate: 0.4,
     minLevel: 9,
     maxLevel: 13,
-    musicians: ["balladeer", "wanderlay", "hummer", "troubadyl"],
-    rare: ["hymnal", "nocturne"],
+    musicians: ["balladeer", "wanderlay", "hummer", "troubadyl", "mandolyn", "balladine"],
+    rare: ["hymnal", "nocturne", "saxophar", "driftwood"],
   },
   // Funk Block + Classical Hall open after the Warehouse (electronic) Residency
   // (player ~Lv13+), so their pools run a tier higher.
@@ -61,14 +61,14 @@ export const ENCOUNTER_ZONES: Record<string, EncounterZone> = {
     minLevel: 13,
     maxLevel: 17,
     musicians: ["grooveling", "funkadel", "fusionaut", "slapdash", "groovile"],
-    rare: ["distortia", "dubwave"],
+    rare: ["distortia", "dubwave", "bassquatch", "discola", "crowdsurf"],
   },
   classical_route: {
     rate: 0.4,
     minLevel: 13,
     maxLevel: 17,
     musicians: ["maestrel", "sonatina", "orchestron", "etudel"],
-    rare: ["cadenza", "nocturne"],
+    rare: ["cadenza", "nocturne", "concerta", "choralis", "maestoso"],
   },
 };
 
