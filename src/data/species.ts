@@ -119,6 +119,31 @@ export const SPECIES: Record<string, MusicianSpecies> = {
     learnset: { 1: ["sync_pulse"], 6: ["sidechain"], 10: ["drop"] },
     recruitDifficulty: 0.75,
   },
+
+  // === Roster expansion, batch 1: commons + uncommons across every genre, for
+  // the early districts' encounter pools (see src/data/encounters.ts). ===
+  // Rock
+  garageling: { id: "garageling", name: "Garageling", genres: ["rock"], baseStats: { stamina: 48, skill: 58, composure: 42, tempo: 48 }, learnset: { 1: ["garage_riff"], 4: ["power_chord"], 8: ["feedback_wail"] }, recruitDifficulty: 0.2 },
+  moshling: { id: "moshling", name: "Moshling", genres: ["rock"], baseStats: { stamina: 52, skill: 58, composure: 40, tempo: 52 }, learnset: { 1: ["garage_riff"], 5: ["power_chord"], 9: ["stage_dive"] }, recruitDifficulty: 0.25 },
+  distortia: { id: "distortia", name: "Distortia", genres: ["rock"], baseStats: { stamina: 52, skill: 64, composure: 46, tempo: 54 }, learnset: { 1: ["power_chord"], 6: ["feedback_wail"], 11: ["wall_of_sound"] }, recruitDifficulty: 0.4 },
+  // Folk
+  hummer: { id: "hummer", name: "Hummer", genres: ["folk"], baseStats: { stamina: 58, skill: 44, composure: 54, tempo: 38 }, learnset: { 1: ["strum"], 4: ["fingerpick"], 7: ["campfire_song"] }, recruitDifficulty: 0.2 },
+  troubadyl: { id: "troubadyl", name: "Troubadyl", genres: ["folk"], baseStats: { stamina: 60, skill: 48, composure: 54, tempo: 40 }, learnset: { 1: ["fingerpick"], 4: ["strum"], 8: ["hoedown"] }, recruitDifficulty: 0.25 },
+  hymnal: { id: "hymnal", name: "Hymnal", genres: ["folk", "classical"], baseStats: { stamina: 58, skill: 48, composure: 62, tempo: 38 }, learnset: { 1: ["strum"], 5: ["fingerpick"], 9: ["arpeggio"] }, recruitDifficulty: 0.45 },
+  // Funk
+  bopling: { id: "bopling", name: "Bopling", genres: ["funk"], baseStats: { stamina: 50, skill: 54, composure: 44, tempo: 58 }, learnset: { 1: ["clavinet"], 5: ["groove_lock"] }, recruitDifficulty: 0.25 },
+  slapdash: { id: "slapdash", name: "Slapdash", genres: ["funk"], baseStats: { stamina: 52, skill: 56, composure: 46, tempo: 56 }, learnset: { 1: ["clavinet"], 5: ["slap_bass"] }, recruitDifficulty: 0.3 },
+  groovile: { id: "groovile", name: "Groovile", genres: ["funk"], baseStats: { stamina: 54, skill: 58, composure: 48, tempo: 58 }, learnset: { 1: ["groove_lock"], 6: ["slap_bass"], 11: ["p_funk"] }, recruitDifficulty: 0.4 },
+  // Jazz
+  scatling: { id: "scatling", name: "Scatling", genres: ["jazz"], baseStats: { stamina: 50, skill: 54, composure: 50, tempo: 46 }, learnset: { 1: ["comping"], 5: ["blue_note"] }, recruitDifficulty: 0.3 },
+  bebopper: { id: "bebopper", name: "Bebopper", genres: ["jazz"], baseStats: { stamina: 48, skill: 58, composure: 48, tempo: 50 }, learnset: { 1: ["comping"], 5: ["syncopation"], 9: ["improv_solo"] }, recruitDifficulty: 0.35 },
+  nocturne: { id: "nocturne", name: "Nocturne", genres: ["jazz"], baseStats: { stamina: 52, skill: 58, composure: 54, tempo: 46 }, learnset: { 1: ["blue_note"], 6: ["syncopation"], 11: ["trading_fours"] }, recruitDifficulty: 0.45 },
+  // Classical
+  etudel: { id: "etudel", name: "Etudel", genres: ["classical"], baseStats: { stamina: 54, skill: 48, composure: 62, tempo: 36 }, learnset: { 1: ["arpeggio"], 5: ["sonata"] }, recruitDifficulty: 0.3 },
+  cadenza: { id: "cadenza", name: "Cadenza", genres: ["classical"], baseStats: { stamina: 56, skill: 54, composure: 64, tempo: 40 }, learnset: { 1: ["arpeggio"], 6: ["fugue"], 11: ["grand_finale"] }, recruitDifficulty: 0.45 },
+  // Electronic
+  bitling: { id: "bitling", name: "Bitling", genres: ["electronic"], baseStats: { stamina: 42, skill: 62, composure: 38, tempo: 66 }, learnset: { 1: ["bitcrush"], 6: ["sync_pulse"] }, recruitDifficulty: 0.4 },
+  dubwave: { id: "dubwave", name: "Dubwave", genres: ["electronic"], baseStats: { stamina: 46, skill: 66, composure: 42, tempo: 64 }, learnset: { 1: ["bitcrush"], 6: ["sync_pulse"], 11: ["wobble_bass"] }, recruitDifficulty: 0.55 },
 };
 
 export const SPECIES_LIST = Object.values(SPECIES);

@@ -1,8 +1,8 @@
 import type { Technique } from "../types/technique";
 
 /**
- * The technique pool (the band-leader take on Pokémon "moves"). Three per
- * genre, each genre with its own feel:
+ * The technique pool (the band-leader take on Pokémon "moves"). Five per genre
+ * (a core trio + an expanded pair below), each genre with its own feel:
  *
  *   • Jazz   — finesse: a dependable foundation + a risky virtuoso flourish.
  *   • Rock   — spectacle: a staple hit + a reckless, high-power gamble.
@@ -98,6 +98,27 @@ export const TECHNIQUES: Record<string, Technique> = {
     priority: 0,
     effect: { kind: "buff", stat: "composure", stages: 1, target: "self", chance: 1 },
   },
+
+  // --- Expanded pool: each genre gets a dependable early hit + a big risky one
+  // (keeps the per-genre feel; gives the wider roster room for varied learnsets).
+  // Jazz
+  comping: { id: "comping", name: "Comping", genre: "jazz", power: 40, accuracy: 1.0, staminaCost: 7, priority: 0 },
+  trading_fours: { id: "trading_fours", name: "Trading Fours", genre: "jazz", power: 72, accuracy: 0.9, staminaCost: 15, priority: 0 },
+  // Rock
+  garage_riff: { id: "garage_riff", name: "Garage Riff", genre: "rock", power: 45, accuracy: 1.0, staminaCost: 8, priority: 0 },
+  wall_of_sound: { id: "wall_of_sound", name: "Wall of Sound", genre: "rock", power: 85, accuracy: 0.85, staminaCost: 19, priority: 0 },
+  // Classical
+  arpeggio: { id: "arpeggio", name: "Arpeggio", genre: "classical", power: 45, accuracy: 1.0, staminaCost: 8, priority: 0 },
+  grand_finale: { id: "grand_finale", name: "Grand Finale", genre: "classical", power: 90, accuracy: 0.85, staminaCost: 20, priority: 0 },
+  // Funk
+  clavinet: { id: "clavinet", name: "Clavinet", genre: "funk", power: 45, accuracy: 1.0, staminaCost: 8, priority: 0 },
+  p_funk: { id: "p_funk", name: "P-Funk", genre: "funk", power: 85, accuracy: 0.85, staminaCost: 19, priority: 0 },
+  // Electronic
+  bitcrush: { id: "bitcrush", name: "Bitcrush", genre: "electronic", power: 45, accuracy: 1.0, staminaCost: 8, priority: 0 },
+  wobble_bass: { id: "wobble_bass", name: "Wobble Bass", genre: "electronic", power: 85, accuracy: 0.8, staminaCost: 20, priority: 0 },
+  // Folk
+  strum: { id: "strum", name: "Strum", genre: "folk", power: 45, accuracy: 1.0, staminaCost: 8, priority: 0 },
+  barn_burner: { id: "barn_burner", name: "Barn Burner", genre: "folk", power: 82, accuracy: 0.9, staminaCost: 17, priority: 0 },
 };
 
 export const TECHNIQUE_LIST = Object.values(TECHNIQUES);

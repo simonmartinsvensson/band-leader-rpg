@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { GENRES, GENRE_LIST } from "../src/data/genres";
 import { TECHNIQUES, TECHNIQUE_LIST } from "../src/data/techniques";
 import { SPECIES, SPECIES_LIST } from "../src/data/species";
+import { ENCOUNTER_ZONES } from "../src/data/encounters";
 import {
   getEffectiveness,
   SUPER_EFFECTIVE,
@@ -53,6 +54,15 @@ describe("data integrity", () => {
       for (const ids of Object.values(s.learnset)) {
         for (const id of ids) expect(TECHNIQUES[id]).toBeDefined();
       }
+    }
+  });
+
+  it("every encounter-zone species (common + rare) exists, with a sane level range", () => {
+    for (const [id, zone] of Object.entries(ENCOUNTER_ZONES)) {
+      for (const sp of [...zone.musicians, ...(zone.rare ?? [])]) {
+        expect(SPECIES[sp], `${id}: ${sp}`).toBeDefined();
+      }
+      expect(zone.minLevel, id).toBeLessThanOrEqual(zone.maxLevel);
     }
   });
 });
