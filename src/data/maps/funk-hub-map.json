@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 4,
-  "nextobjectid": 8,
+  "nextobjectid": 9,
   "tilesets": [
     {
       "firstgid": 1,
@@ -673,6 +673,24 @@
               "name": "forbids",
               "type": "string",
               "value": "story.rival3_done"
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "name": "poster_block",
+          "type": "lore",
+          "x": 32,
+          "y": 48,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "lore",
+              "type": "string",
+              "value": "poster_block"
             }
           ]
         }

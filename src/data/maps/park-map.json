@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 4,
-  "nextobjectid": 7,
+  "nextobjectid": 8,
   "tilesets": [
     {
       "firstgid": 1,
@@ -882,6 +882,24 @@
               "name": "entry",
               "type": "string",
               "value": "from_park"
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "name": "note_park",
+          "type": "lore",
+          "x": 64,
+          "y": 192,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "lore",
+              "type": "string",
+              "value": "note_park"
             }
           ]
         }

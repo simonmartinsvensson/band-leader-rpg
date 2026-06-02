@@ -9,12 +9,15 @@ import type { PartyData } from "./PartyScene";
 import type { BagData } from "./BagScene";
 import type { CareerData } from "./CareerScene";
 import type { QuestData } from "./QuestScene";
+import type { LoreData } from "./LoreScene";
 
 export interface PauseData {
   parent: string;
 }
 
-const OPTIONS = ["Save Game", "Party", "Bag", "Career", "Quests", "Audio", "Resume"] as const;
+const OPTIONS = ["Save Game", "Party", "Bag", "Career", "Quests", "Lore", "Audio", "Resume"] as const;
+const ROW0 = 48; // first option y
+const ROWH = 11; // row spacing (fits all options in the box)
 
 /**
  * Main pause menu (overworld key Esc). Saves the game to localStorage, opens
@@ -53,8 +56,8 @@ export class PauseScene extends Phaser.Scene {
     this.add.graphics().lineStyle(1, 0xffffff, 0.6).strokeRect(70, 28, 104, 104);
     createText(this, 78, 34, "PAUSE", { color: 0xffd54f });
 
-    this.optionTexts = OPTIONS.map((label, i) => createText(this, 86, 50 + i * 12, this.optionLabel(label)));
-    this.cursor = createText(this, 76, 50, ">");
+    this.optionTexts = OPTIONS.map((label, i) => createText(this, 86, ROW0 + i * ROWH, this.optionLabel(label)));
+    this.cursor = createText(this, 76, ROW0, ">");
     this.status = createText(this, 8, GAME_HEIGHT - 10, "Move  L/R:Vol  Space:Sel  Esc:Resume", { color: 0x8b8b9b });
 
     const kb = this.input.keyboard!;
@@ -103,7 +106,7 @@ export class PauseScene extends Phaser.Scene {
   }
 
   private refresh(): void {
-    this.cursor.setY(50 + this.index * 12);
+    this.cursor.setY(ROW0 + this.index * ROWH);
     const ai = OPTIONS.indexOf("Audio");
     this.optionTexts[ai]?.setText(this.optionLabel("Audio"));
   }
@@ -128,6 +131,9 @@ export class PauseScene extends Phaser.Scene {
         break;
       case "Quests":
         this.openSub("QuestScene", { parent: this.parent } satisfies QuestData);
+        break;
+      case "Lore":
+        this.openSub("LoreScene", { parent: this.parent } satisfies LoreData);
         break;
       case "Audio":
         audio.toggleMute(); // Confirm = mute toggle; Left/Right = volume (in update)

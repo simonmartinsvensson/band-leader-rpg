@@ -3,6 +3,7 @@ import { MAPS } from "../src/data/maps";
 import { DIALOGUES } from "../src/data/dialogues";
 import { TRAINERS } from "../src/data/trainers";
 import { ENCOUNTER_ZONES } from "../src/data/encounters";
+import { getLore } from "../src/data/lore";
 import { EVENTS } from "../src/data/events";
 import { findEvent } from "../src/systems/cutscene";
 import type { Flags } from "../src/systems/story";
@@ -47,6 +48,7 @@ describe("map object references resolve", () => {
           expect(DIALOGUES[String(o.props.dialogue)], `${key}/${o.name} dialogue`).toBeDefined();
         if (o.type === "trainer") expect(TRAINERS[String(o.props.trainer)], `${key}/${o.name} trainer`).toBeDefined();
         if (o.type === "encounter") expect(ENCOUNTER_ZONES[String(o.props.zone)], `${key}/${o.name} zone`).toBeDefined();
+        if (o.type === "lore") expect(getLore(String(o.props.lore)), `${key}/${o.name} lore`).toBeDefined();
       }
     }
   });

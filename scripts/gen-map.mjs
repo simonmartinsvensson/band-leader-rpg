@@ -239,6 +239,7 @@ mkdirSync(OUT_DIR, { recursive: true });
       th: 6,
       props: { zone: "busking_street" },
     }),
+    obj({ name: "poster_busk", type: "lore", tx: 16, ty: 12, props: { lore: "poster_busk" } }),
   ];
 
   const map = makeMap(W, H, [
@@ -271,6 +272,7 @@ mkdirSync(OUT_DIR, { recursive: true });
     obj({ name: "studio_entry", type: "entry", tx: 7, ty: 6 }),
     obj({ name: "stage", type: "heal", tx: 7, ty: 3 }),
     obj({ name: "to_town", type: "warp", tx: 2, ty: 1, props: { target: "town", entry: "from_studio" } }),
+    obj({ name: "note_studio", type: "lore", tx: 11, ty: 7, props: { lore: "note_studio" } }),
   ];
 
   const map = makeMap(W, H, [
@@ -356,6 +358,7 @@ mkdirSync(OUT_DIR, { recursive: true });
     obj({ name: "to_club", type: "warp", tx: 1, ty: 1, props: { target: "jazz_club", entry: "from_town" } }),
     // Signature encounter zone: the old scene's echoes (rare: Cassette).
     obj({ name: "backstage_zone", type: "encounter", tx: 2, ty: 1, tw: 5, th: 4, props: { zone: "blue_note_backstage" } }),
+    obj({ name: "record_vip", type: "lore", tx: 6, ty: 4, props: { lore: "record_vip" } }),
   ];
 
   const map = makeMap(W, H, [
@@ -411,6 +414,7 @@ mkdirSync(OUT_DIR, { recursive: true });
     // Warp east to the warehouse venue; arrive back here from it.
     obj({ name: "from_warehouse", type: "entry", tx: 19, ty: 8 }),
     obj({ name: "to_warehouse", type: "warp", tx: 20, ty: 8, props: { target: "warehouse", entry: "from_park" } }),
+    obj({ name: "note_park", type: "lore", tx: 4, ty: 12, props: { lore: "note_park" } }),
   ];
 
   const map = makeMap(W, H, [
@@ -641,6 +645,8 @@ function buildDistrict(cfg) {
             }),
           ]
         : []),
+      // A scattered piece of collectible lore tucked in the corner.
+      ...(cfg.lore ? [obj({ name: cfg.lore, type: "lore", tx: 2, ty: 3, props: { lore: cfg.lore } })] : []),
     ];
     const map = makeMap(W, H, [
       tileLayer(1, "ground", W, H, ground),
@@ -660,14 +666,14 @@ const DISTRICTS = [
   // arRep: a Monocorp A&R-rep trainer ambushes this route once `requires` is set.
   { genre: "rock", routeKey: "rock_route", hubKey: "rock_hub", routeFile: "rock-route-map.json", hubFile: "rock-hub-map.json", zoneId: "rock_route", townReturnEntry: "from_rock", localDialogue: "rock_local", venueSignDialogue: "rock_venue_sign", flavorTint: "#e74c3c", hasVenue: true,
     rivalBeat: { name: "rival_rock", requires: "story.met_rival", forbids: "story.rival2_done" },
-    arRep: { trainer: "ar_rep_strip", requires: "story.jazz_won" } },
-  { genre: "folk", routeKey: "folk_route", hubKey: "folk_hub", routeFile: "folk-route-map.json", hubFile: "folk-hub-map.json", zoneId: "folk_route", townReturnEntry: "from_folk", localDialogue: "folk_local", venueSignDialogue: "folk_venue_sign", flavorTint: "#27ae60", hasVenue: true },
+    arRep: { trainer: "ar_rep_strip", requires: "story.jazz_won" }, lore: "poster_strip" },
+  { genre: "folk", routeKey: "folk_route", hubKey: "folk_hub", routeFile: "folk-route-map.json", hubFile: "folk-hub-map.json", zoneId: "folk_route", townReturnEntry: "from_folk", localDialogue: "folk_local", venueSignDialogue: "folk_venue_sign", flavorTint: "#27ae60", hasVenue: true, lore: "record_river" },
   { genre: "funk", routeKey: "funk_route", hubKey: "funk_hub", routeFile: "funk-route-map.json", hubFile: "funk-hub-map.json", zoneId: "funk_route", townReturnEntry: "from_funk", localDialogue: "funk_local", venueSignDialogue: "funk_venue_sign", flavorTint: "#e67e22", hasVenue: true,
     rivalBeat: { name: "rival_funk", requires: "story.rival2_done", forbids: "story.rival3_done" },
-    arRep: { trainer: "ar_rep_block", requires: "story.electronic_won" } },
+    arRep: { trainer: "ar_rep_block", requires: "story.electronic_won" }, lore: "poster_block" },
   { genre: "classical", routeKey: "classical_route", hubKey: "classical_hub", routeFile: "classical-route-map.json", hubFile: "classical-hub-map.json", zoneId: "classical_route", townReturnEntry: "from_classical", localDialogue: "classical_local", venueSignDialogue: "classical_venue_sign", flavorTint: "#f1c40f", hasVenue: true,
     rivalBeat: { name: "rival_classical", requires: "story.rival3_done", forbids: "story.rival4_done" },
-    arRep: { trainer: "ar_rep_hall", requires: "story.electronic_won" } },
+    arRep: { trainer: "ar_rep_hall", requires: "story.electronic_won" }, lore: "record_hall" },
 ];
 for (const d of DISTRICTS) buildDistrict(d);
 
@@ -705,6 +711,7 @@ for (const d of DISTRICTS) buildDistrict(d);
       ty: 7,
       props: { dialogue: "tower_guard", facing: "right", wander: false, tint: "#5a6b8c" },
     }),
+    obj({ name: "note_tower", type: "lore", tx: 11, ty: 7, props: { lore: "note_tower" } }),
   ];
 
   const map = makeMap(W, H, [

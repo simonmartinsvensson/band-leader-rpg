@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 4,
-  "nextobjectid": 5,
+  "nextobjectid": 6,
   "tilesets": [
     {
       "firstgid": 1,
@@ -240,6 +240,24 @@
               "name": "zone",
               "type": "string",
               "value": "blue_note_backstage"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "name": "record_vip",
+          "type": "lore",
+          "x": 96,
+          "y": 64,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "lore",
+              "type": "string",
+              "value": "record_vip"
             }
           ]
         }

@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 4,
-  "nextobjectid": 7,
+  "nextobjectid": 8,
   "tilesets": [
     {
       "firstgid": 1,
@@ -630,6 +630,24 @@
               "name": "tint",
               "type": "string",
               "value": "#27ae60"
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "name": "record_river",
+          "type": "lore",
+          "x": 32,
+          "y": 48,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "lore",
+              "type": "string",
+              "value": "record_river"
             }
           ]
         }

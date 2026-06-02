@@ -11,6 +11,7 @@ import { BagScene } from "./scenes/BagScene";
 import { ShopScene } from "./scenes/ShopScene";
 import { CareerScene } from "./scenes/CareerScene";
 import { QuestScene } from "./scenes/QuestScene";
+import { LoreScene } from "./scenes/LoreScene";
 import { NameEntryScene } from "./scenes/NameEntryScene";
 import { WinScene } from "./scenes/WinScene";
 import { PauseScene } from "./scenes/PauseScene";
@@ -47,6 +48,7 @@ const config: Phaser.Types.Core.GameConfig = {
     ShopScene,
     CareerScene,
     QuestScene,
+    LoreScene,
     NameEntryScene,
     WinScene,
     PauseScene,

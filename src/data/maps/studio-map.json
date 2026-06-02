@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 4,
-  "nextobjectid": 4,
+  "nextobjectid": 5,
   "tilesets": [
     {
       "firstgid": 1,
@@ -384,6 +384,24 @@
               "name": "entry",
               "type": "string",
               "value": "from_studio"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "name": "note_studio",
+          "type": "lore",
+          "x": 176,
+          "y": 112,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "lore",
+              "type": "string",
+              "value": "note_studio"
             }
           ]
         }

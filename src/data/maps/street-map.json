@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 4,
-  "nextobjectid": 4,
+  "nextobjectid": 5,
   "tilesets": [
     {
       "firstgid": 1,
@@ -711,6 +711,24 @@
               "name": "zone",
               "type": "string",
               "value": "busking_street"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "name": "poster_busk",
+          "type": "lore",
+          "x": 256,
+          "y": 192,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "lore",
+              "type": "string",
+              "value": "poster_busk"
             }
           ]
         }
