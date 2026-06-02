@@ -135,6 +135,28 @@ describe("Vy's backstory arc gating", () => {
 // --- escalation invariants ---------------------------------------------------
 const totalLevel = (id: string) => TRAINERS[id].team.reduce((s, m) => s + m.level, 0);
 
+describe("the world reacts (flavour NPCs)", () => {
+  const interactId = (object: string, flags: Flags) =>
+    findEvent(EVENTS, { type: "interact", map: "", object }, flags)?.id;
+
+  it("district locals change their line once their venue is won", () => {
+    expect(interactId("rock_local", {})).toBeUndefined(); // base dialogue before
+    expect(interactId("rock_local", { "story.rock_won": true })).toBe("react_rock_local");
+  });
+
+  it("the busker tracks the rival's arc, most-progressed line winning", () => {
+    expect(interactId("busker", {})).toBeUndefined(); // base dialogue
+    expect(interactId("busker", { "story.rival_signed": true })).toBe("react_busker_signed");
+    // Redeemed supersedes signed; post-game supersedes both (mutually exclusive).
+    expect(interactId("busker", { "story.rival_signed": true, "story.rival_redeemed": true })).toBe(
+      "react_busker_redeemed",
+    );
+    expect(
+      interactId("busker", { "story.rival_redeemed": true, "story.game_complete": true }),
+    ).toBe("react_busker_postgame");
+  });
+});
+
 describe("recurring trainers escalate", () => {
   it("the rival's teams grow stronger each beat", () => {
     const chain = ["rival_max", "rival_max_2", "rival_max_3", "rival_max_4", "rival_max_5"];

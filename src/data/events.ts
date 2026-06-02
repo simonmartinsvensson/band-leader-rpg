@@ -329,6 +329,102 @@ export const EVENTS: StoryEvent[] = [
     ],
   },
 
+  // === THE WORLD REACTS — repeatable flavour beats (no `once`, no flags set)
+  // that change an NPC's lines as the story advances. findEvent picks the first
+  // eligible event, falling back to the NPC's base dialogue; reactive events are
+  // kept mutually exclusive (requires/forbids) so order doesn't matter. ===
+
+  // District locals cheer once you've won their venue.
+  {
+    id: "react_rock_local",
+    trigger: { type: "interact", object: "rock_local" },
+    requires: ["story.rock_won"],
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "Strip Regular",
+        pages: ["The Amp's PACKED again - heard it three blocks over!", "You did that, {name}. The Strip's LOUD."],
+      },
+    ],
+  },
+  {
+    id: "react_folk_local",
+    trigger: { type: "interact", object: "folk_local" },
+    requires: ["story.folk_won"],
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "Riverside Busker",
+        pages: ["They're singing your set on the water now, {name}.", "The Landing's full every night. Folk's home again."],
+      },
+    ],
+  },
+  {
+    id: "react_funk_local",
+    trigger: { type: "interact", object: "funk_local" },
+    requires: ["story.funk_won"],
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "Block Captain",
+        pages: ["The Pocket's been JUMPIN' since you played it, {name}.", "Whole block's back on the one. Feel that?"],
+      },
+    ],
+  },
+  {
+    id: "react_classical_local",
+    trigger: { type: "interact", object: "classical_local" },
+    requires: ["story.classical_won"],
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "Hall Usher",
+        pages: ["The Conservatory has not sounded so alive in years.", "Mastery AND fire, {name}. The maestro approves of you."],
+      },
+    ],
+  },
+
+  // The town busker tracks the rival's slide and redemption (surfaces the rival
+  // relationship state out in the world). Ordered most-progressed first.
+  {
+    id: "react_busker_postgame",
+    trigger: { type: "interact", object: "busker" },
+    requires: ["story.game_complete"],
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "Street Busker",
+        pages: ["Listen to it. The whole city, loud again.", "We owe you the noise, {name}. Spare a chord? Heh - on the house."],
+      },
+    ],
+  },
+  {
+    id: "react_busker_redeemed",
+    trigger: { type: "interact", object: "busker" },
+    requires: ["story.rival_redeemed"],
+    forbids: ["story.game_complete"],
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "Street Busker",
+        pages: ["Max tore that Monocorp badge clean off, you hear?!", "Word is YOU got in his head, {name}. Ha! Good."],
+      },
+    ],
+  },
+  {
+    id: "react_busker_signed",
+    trigger: { type: "interact", object: "busker" },
+    requires: ["story.rival_signed"],
+    forbids: ["story.rival_redeemed"],
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "Street Busker",
+        pages: ["You hear Max signed with Monocorp? Tch.", "Kid had a REAL sound, too. They'll sand it right off him. Shame."],
+      },
+    ],
+  },
+
   // --- THE FINALE: Monocorp's headliner gauntlet (Elite-Four style) ---
   // Triggered by facing The Chairman atop Monocorp Tower, once every residency
   // is earned. Four boss battles back-to-back (the cutscene chains them, so the
