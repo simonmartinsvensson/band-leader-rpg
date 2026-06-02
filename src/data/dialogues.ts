@@ -129,6 +129,22 @@ export const DIALOGUES: Record<string, Dialogue> = {
     speaker: "Sign",
     pages: ['"THE CONSERVATORY - concert hall."', "Tuning the room. Doors open in due time."],
   },
+  // Monocorp Tower (the finale location).
+  tower_guard: {
+    speaker: "Tower Lobby",
+    pages: [
+      "Monocorp Tower. Every playlist in the city is mixed on the top floor.",
+      "The Chairman only sees leaders who've made a name in every scene.",
+    ],
+  },
+  // Shown when you face The Chairman before earning all six residencies.
+  monocorp_ceo_locked: {
+    speaker: "The Chairman",
+    pages: [
+      "Come back when you matter, {name}.",
+      "Win a residency in every scene in my city. Then we'll talk about the top floor.",
+    ],
+  },
   park_scout: {
     speaker: "Talent Scout",
     pages: [

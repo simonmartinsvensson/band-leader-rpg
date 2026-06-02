@@ -100,6 +100,48 @@ function winRate(party: MusicianInstance[], trainerId: string, seeds = 40): numb
   return wins / seeds;
 }
 
+/** Fight one team with the given (already-cloned, NOT healed) party; mutates it. */
+function fightTeam(p: MusicianInstance[], team: MusicianInstance[], rng: () => number): "win" | "loss" {
+  const opps = team.map(clone);
+  let active = p.findIndex((m) => m.currentStamina > 0);
+  if (active < 0) return "loss";
+  const state: BattleState = createBattleState(p[active], opps[0]);
+  let oppIdx = 0;
+  for (let guard = 0; guard < 2000; guard++) {
+    if (state.outcome === "player_won") {
+      if (oppIdx + 1 < opps.length) {
+        oppIdx++;
+        state.opponent = makeBattler(opps[oppIdx]);
+        state.outcome = "ongoing";
+      } else return "win";
+    } else if (state.outcome === "player_lost") {
+      const next = p.findIndex((m, i) => i !== active && m.currentStamina > 0);
+      if (next < 0) return "loss";
+      active = next;
+      state.player = makeBattler(p[active]);
+      state.outcome = "ongoing";
+    }
+    resolveTurn(
+      state,
+      { kind: "perform", techniqueId: bestMove(state.player, state.opponent) },
+      { kind: "perform", techniqueId: bestMove(state.opponent, state.player) },
+      rng,
+    );
+  }
+  return "loss";
+}
+
+/** Win rate over the Elite-Four-style gauntlet — back-to-back, NO healing between. */
+function gauntletWinRate(party: MusicianInstance[], trainerIds: string[], seeds = 40): number {
+  let wins = 0;
+  for (let i = 0; i < seeds; i++) {
+    const p = party.map(clone);
+    const rng = makeRng(i * 2654435761);
+    if (trainerIds.every((id) => fightTeam(p, buildTrainerTeam(TRAINERS[id]), rng) === "win")) wins++;
+  }
+  return wins / seeds;
+}
+
 describe("balance: early game is beatable", () => {
   it("the starter party can beat the early rival", () => {
     const rate = winRate(createStarterParty(), "rival_max");
@@ -268,5 +310,23 @@ describe("balance: district venues (the circuit)", () => {
     console.log(`classical: under ${(winRate(under, "classical_headliner") * 100).toFixed(0)}%  ready ${(winRate(ready, "classical_headliner") * 100).toFixed(0)}%`);
     expect(winRate(under, "classical_headliner")).toBeLessThan(0.6);
     expect(winRate(ready, "classical_headliner")).toBeGreaterThanOrEqual(0.7);
+  });
+});
+
+describe("balance: the finale gauntlet (Monocorp Tower)", () => {
+  // Four bosses back-to-back with NO healing between (the finale cutscene chains
+  // them). A true endgame wall: it demands a full, leveled, six-strong band.
+  const GAUNTLET = ["monocorp_enforcer", "monocorp_curator", "monocorp_exec", "monocorp_ceo"];
+  const endgameBand = (lvl: number): MusicianInstance[] =>
+    (["rifflet", "crooner", "balladeer", "sonatina", "grooveling", "synthrax"] as const).map((s) =>
+      createInstance(SPECIES[s], lvl),
+    );
+
+  it("wipes an under-leveled band but yields to a leveled six-piece", () => {
+    const underRate = gauntletWinRate(endgameBand(20), GAUNTLET);
+    const readyRate = gauntletWinRate(endgameBand(26), GAUNTLET);
+    console.log(`finale gauntlet: under-L20 ${(underRate * 100).toFixed(0)}%  endgame-L26 ${(readyRate * 100).toFixed(0)}%`);
+    expect(underRate).toBeLessThan(0.4);
+    expect(readyRate).toBeGreaterThanOrEqual(0.7);
   });
 });

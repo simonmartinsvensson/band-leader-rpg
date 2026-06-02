@@ -375,10 +375,12 @@ The "gym/badge" progression, reskinned as winning over music venues.
 
 - **Trainers** (`src/data/trainers.ts`) — rival band leaders + venue headliners. A `Trainer` has a
   fixed `team` (species + level), `reward` (currency), intro/defeat/post lines, a `sightRange`
-  (line-of-sight tiles; 0 = interaction only), and an optional `residency` (venue bosses grant it).
-  Placed via map objects of type **`trainer`** (prop `trainer` = id). Authored: `rival_max` (town),
-  `jazz_headliner` (the jazz venue), and — guarding the second venue — `rival_dex` (the warehouse
-  opening act) and `warehouse_headliner` (the electronic boss).
+  (line-of-sight tiles; 0 = interaction only), an optional `residency` (venue bosses grant it), and
+  an optional **`storyFlag`** (set on defeat — advances the main objective; see Story). Placed via
+  map objects of type **`trainer`** (prop `trainer` = id). Authored: `rival_max` (town), the six
+  venue headliners — `jazz_headliner`, `warehouse_headliner`, `rock_headliner`, `folk_headliner`,
+  `funk_headliner`, `classical_headliner` — the warehouse guard `rival_dex`, and the finale bosses
+  `monocorp_enforcer`/`monocorp_curator`/`monocorp_exec`/`monocorp_ceo`.
 - **Triggering** — `OverworldScene` records placed trainers (NPC sprite + data). On the player
   finishing a step, `trainerSeeing` checks each undefeated trainer's line of sight; on interaction,
   facing a trainer starts it. Either way the intro dialogue plays, then the battle. Beaten trainers
@@ -386,10 +388,24 @@ The "gym/badge" progression, reskinned as winning over music venues.
 - **Trainer battles** (`BattleScene`) — `BattleData` carries `opponents: MusicianInstance[]` (one for
   wild, several for a trainer) and an optional `trainer` descriptor. Each fainted opponent awards XP;
   the trainer sends out the next until the team is cleared. Recruit/Run are disabled vs trainers. On
-  victory the reward is paid, the trainer is marked defeated, and any `residency` is granted.
+  victory the reward is paid, the trainer is marked defeated, any `residency` is granted, and any
+  `storyFlag` is set (this is how clearing a venue advances the main story).
+- **The venue gauntlet** — six venues, each a genre-themed headliner that grants a residency + sets
+  a `story.<genre>_won` flag, with a story beat before (intro) and after (defeat lines): The Blue
+  Note (jazz, Lv8-9), The Warehouse (electronic, Lv13-15, behind guard `rival_dex`), and the four
+  district-hub venues The Amp (rock), The Landing (folk), The Pocket (funk), The Conservatory
+  (classical). Genre logic shapes each: jazz/electronic/folk need a *recruited counter*; rock/funk/
+  classical (countered by the starters) are *level checks*. `tests/balance.test.ts` guards every
+  venue's beatable-but-not-trivial curve (tuned by simulation).
+- **The finale** — once all six `story.*_won` flags are set, facing **The Chairman** atop
+  `monocorp_hq` (the Tower, warped to from town) fires `finale_gauntlet` (`src/data/events.ts`): an
+  Elite-Four run of four boss battles **back-to-back with no healing** (cutscene `battle` steps),
+  the reveal that the Chairman is Vy's vanished legend, then a `win` step → `WinScene` (credits +
+  Hall of Fame), which saves and sets `story.game_complete`. The gauntlet's endgame curve is tested
+  too (under-leveled wipes; a leveled six-piece clears it).
 - **Residencies** (`src/data/residencies.ts`) — the badge equivalent, tracked in the registry
-  (`"residencies"`). `jazz` ("The Blue Note") is granted by `jazz_headliner`; `electronic`
-  ("The Warehouse") is granted by `warehouse_headliner`.
+  (`"residencies"`): `jazz`, `electronic`, `rock`, `folk`, `funk`, `classical`, each granted by its
+  venue headliner.
 - **Unlock (gated)** — a map object of type **`gate`** (props `requires`, `target`, `entry`) is a
   bouncer that blocks movement; interacting warps you through only if you hold the required
   residency, otherwise it turns you away. The jazz residency unlocks the VIP lounge behind the jazz
@@ -397,10 +413,10 @@ The "gym/badge" progression, reskinned as winning over music venues.
 - **Career menu** (`CareerScene`, overlay, key **`C`**) — shows residencies earned and rivals beaten.
 - **Logic** (`src/systems/career.ts`, pure + tested) — `isTrainerDefeated`/`markTrainerDefeated`,
   `hasResidency`/`addResidency`, `buildTrainerTeam`, and `lineOfSight`.
-- **Maps** — venue 1: `jazz_club` (boss + VIP gate) and `vip_lounge` (the unlocked reward area),
-  reached from town directly. Venue 2: `warehouse` (a guard rival + the electronic boss + a
-  backstage gate) and `backstage` (the reward area), reached from town via the `park`. Both venues
-  are reached by warps.
+- **Maps** — standalone venues: `jazz_club` (+ `vip_lounge`) reached from town directly, `warehouse`
+  (+ `backstage`) via the `park`. The other four venue bosses live on their district hub's stage
+  (`rock_hub`/`folk_hub`/`funk_hub`/`classical_hub` — see World map). The finale is `monocorp_hq`
+  (the Tower), warped to from town.
 
 ## Balance & difficulty
 
@@ -448,7 +464,8 @@ persists with the save for free — see Saving). The **opening arc is implemente
   flag gates and a `once` flag (set on completion; blocks replay), and ordered `steps`. Step kinds:
   `dialogue`, `nameEntry` (prompts via `NameEntryScene`, persists the player's name), `wait`,
   `turn`/`walk` (actor = `"player"` or a map object's `name`), `setFlag`, `giveItem`,
-  `giveCurrency`, `battle` (`trainer` or `species`+`level`). The engine `src/systems/cutscene.ts`
+  `giveCurrency`, `battle` (`trainer` or `species`+`level`), and `win` (save + roll the WinScene —
+  used by the finale). The engine `src/systems/cutscene.ts`
   (pure, tested) is `findEvent`/`eventEligible`/`triggerMatches` + `runCutscene(steps, handlers)` —
   it sequences steps and delegates effects to injected handlers.
 - **Playback** — `OverworldScene` checks for an eligible event on map-enter (`create`), step

@@ -162,6 +162,68 @@ export const TRAINERS: Record<string, Trainer> = {
     residency: "classical",
     storyFlag: "story.classical_won",
   },
+
+  // --- The finale: Monocorp's headliner gauntlet (Elite-Four style) ---
+  // Fought back-to-back with no healing between (the finale cutscene chains
+  // them). High-level, mixed-genre "Monocorp sound" teams.
+  monocorp_enforcer: {
+    id: "monocorp_enforcer",
+    name: "Monocorp Enforcer",
+    team: [
+      { species: "synthrax", level: 18 },
+      { species: "voltaxe", level: 19 },
+    ],
+    reward: 3000,
+    intro: ["Security. You're not on the list.", "Nothing personal - it's just brand protection."],
+    defeatLine: ["...how. Our sound is FLAWLESS."],
+    postLine: ["Go up. The next floor will end you."],
+    sightRange: 0,
+  },
+  monocorp_curator: {
+    id: "monocorp_curator",
+    name: "Monocorp Curator",
+    team: [
+      { species: "sonatina", level: 19 },
+      { species: "orchestron", level: 20 },
+    ],
+    reward: 3200,
+    intro: ["I curate every playlist in this city.", "Your little 'scene' is a rounding error. Let me delete it."],
+    defeatLine: ["Statistically... impossible."],
+    postLine: ["The top floor. He's waiting for you."],
+    sightRange: 0,
+  },
+  monocorp_exec: {
+    id: "monocorp_exec",
+    name: "Monocorp VP",
+    team: [
+      { species: "funkadel", level: 20 },
+      { species: "fusionaut", level: 22 },
+    ],
+    reward: 3600,
+    intro: ["Quarterly noise is down 40%. You're the variance.", "I optimize variance away."],
+    defeatLine: ["This will be reflected... in my review..."],
+    postLine: ["He'll see you now. For what it's worth - good luck."],
+    sightRange: 0,
+  },
+  // The antagonist — and the vanished legend Vy spoke of.
+  monocorp_ceo: {
+    id: "monocorp_ceo",
+    name: "The Chairman",
+    team: [
+      { species: "orchestron", level: 22 },
+      { species: "voltaxe", level: 23 },
+      { species: "fusionaut", level: 25 },
+    ],
+    reward: 9000,
+    intro: ["So. Vy's last protege, all grown up.", "Yes - I was the leader who 'vanished'. I didn't vanish. I WON.", "I gave the city one perfect sound and it stopped fighting. Let me show you peace."],
+    defeatLine: [
+      "...That sound. I used to make that sound.",
+      "Before I decided that safe was better than alive.",
+      "Take it back, kid. All of it. The scene is yours.",
+    ],
+    postLine: ["Go on. They're already playing in the streets again."],
+    sightRange: 0,
+  },
 };
 
 export function getTrainer(id: string): Trainer | undefined {

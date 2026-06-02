@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 4,
-  "nextobjectid": 24,
+  "nextobjectid": 26,
   "tilesets": [
     {
       "firstgid": 1,
@@ -1758,6 +1758,40 @@
           "type": "entry",
           "x": 384,
           "y": 272,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true
+        },
+        {
+          "id": 24,
+          "name": "to_tower",
+          "type": "warp",
+          "x": 320,
+          "y": 16,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "target",
+              "type": "string",
+              "value": "monocorp_hq"
+            },
+            {
+              "name": "entry",
+              "type": "string",
+              "value": "from_town"
+            }
+          ]
+        },
+        {
+          "id": 25,
+          "name": "from_tower",
+          "type": "entry",
+          "x": 320,
+          "y": 32,
           "width": 16,
           "height": 16,
           "rotation": 0,

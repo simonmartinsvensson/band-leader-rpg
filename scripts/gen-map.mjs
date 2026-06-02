@@ -194,6 +194,10 @@ mkdirSync(OUT_DIR, { recursive: true });
     obj({ name: "from_funk", type: "entry", tx: 18, ty: 17 }),
     obj({ name: "to_classical", type: "gate", tx: 24, ty: 18, props: { requires: "electronic", target: "classical_route", entry: "from_town" } }),
     obj({ name: "from_classical", type: "entry", tx: 24, ty: 17 }),
+    // Monocorp Tower (the finale) looms over downtown — always enterable, but
+    // The Chairman turns you away until you hold every residency.
+    obj({ name: "to_tower", type: "warp", tx: 20, ty: 1, props: { target: "monocorp_hq", entry: "from_town" } }),
+    obj({ name: "from_tower", type: "entry", tx: 20, ty: 2 }),
   ];
 
   const map = makeMap(W, H, [
@@ -619,3 +623,48 @@ const DISTRICTS = [
   { genre: "classical", routeKey: "classical_route", hubKey: "classical_hub", routeFile: "classical-route-map.json", hubFile: "classical-hub-map.json", zoneId: "classical_route", townReturnEntry: "from_classical", localDialogue: "classical_local", venueSignDialogue: "classical_venue_sign", flavorTint: "#f1c40f", hasVenue: true },
 ];
 for (const d of DISTRICTS) buildDistrict(d);
+
+// =============================================================================
+// MONOCORP_HQ — the Tower lobby + the antagonist (The Chairman). Reached from
+// town; the finale gauntlet cutscene fires when you face the Chairman holding
+// every residency (see src/data/events.ts "finale_gauntlet").
+// =============================================================================
+{
+  nextObjectId = 1;
+  const W = 14;
+  const H = 11;
+  const at = (x, y) => y * W + x;
+  const ground = new Array(W * H).fill(PATH); // polished lobby floor
+  for (let x = 4; x <= 9; x++) ground[at(x, 2)] = WATER; // glassy backdrop behind the stage
+  const collision = new Array(W * H).fill(0);
+  border(collision, W, H);
+
+  const objects = [
+    obj({ name: "from_town", type: "entry", tx: 7, ty: 9 }),
+    obj({ name: "to_town", type: "warp", tx: 1, ty: 9, props: { target: "town", entry: "from_tower" } }),
+    // The Chairman — finale trigger (interaction-only). Locked dialogue until
+    // every residency is earned; then the gauntlet cutscene takes over.
+    obj({
+      name: "monocorp_ceo",
+      type: "npc",
+      tx: 7,
+      ty: 3,
+      props: { dialogue: "monocorp_ceo_locked", facing: "down", wander: false, tint: "#2b2f3a" },
+    }),
+    obj({
+      name: "tower_guard",
+      type: "npc",
+      tx: 3,
+      ty: 7,
+      props: { dialogue: "tower_guard", facing: "right", wander: false, tint: "#5a6b8c" },
+    }),
+  ];
+
+  const map = makeMap(W, H, [
+    tileLayer(1, "ground", W, H, ground),
+    tileLayer(2, "collision", W, H, collision),
+    { id: 3, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
+  ]);
+  writeFileSync(resolve(OUT_DIR, "monocorp-hq-map.json"), JSON.stringify(map, null, 2) + "\n");
+  console.log(`Wrote monocorp-hq-map.json (monocorp_hq, ${W}x${H})`);
+}

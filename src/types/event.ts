@@ -20,7 +20,9 @@ export type EventStep =
   | { kind: "giveCurrency"; amount: number }
   | { kind: "turn"; actor: string; facing: Direction }
   | { kind: "walk"; actor: string; path: Direction[] }
-  | { kind: "battle"; trainer?: string; species?: string; level?: number };
+  | { kind: "battle"; trainer?: string; species?: string; level?: number }
+  // End the game: save, then roll credits / Hall of Fame (the WinScene).
+  | { kind: "win" };
 
 /** What makes an event fire. */
 export type EventTrigger =

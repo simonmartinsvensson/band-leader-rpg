@@ -17,6 +17,7 @@ export interface CutsceneHandlers {
   turn(actor: string, facing: Direction): Promise<void> | void;
   walk(actor: string, path: Direction[]): Promise<void> | void;
   battle(step: Extract<EventStep, { kind: "battle" }>): Promise<void> | void;
+  win(): Promise<void> | void;
   setFlag(flag: string, value: boolean): void;
   giveItem(item: string, qty: number): void;
   giveCurrency(amount: number): void;
@@ -43,6 +44,9 @@ export async function runCutscene(steps: EventStep[], h: CutsceneHandlers): Prom
         break;
       case "battle":
         await h.battle(step);
+        break;
+      case "win":
+        await h.win();
         break;
       case "setFlag":
         h.setFlag(step.flag, step.value ?? true);

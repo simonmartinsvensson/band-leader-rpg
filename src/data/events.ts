@@ -148,4 +148,65 @@ export const EVENTS: StoryEvent[] = [
       { kind: "setFlag", flag: "story.mentor_warning" },
     ],
   },
+
+  // --- THE FINALE: Monocorp's headliner gauntlet (Elite-Four style) ---
+  // Triggered by facing The Chairman atop Monocorp Tower, once every residency
+  // is earned. Four boss battles back-to-back (the cutscene chains them, so the
+  // party is NOT healed between fights), then the legend reveal + the win state.
+  {
+    id: "finale_gauntlet",
+    trigger: { type: "interact", object: "monocorp_ceo" },
+    requires: [
+      "story.jazz_won",
+      "story.electronic_won",
+      "story.rock_won",
+      "story.folk_won",
+      "story.funk_won",
+      "story.classical_won",
+    ],
+    once: "story.game_complete",
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "The Chairman",
+        pages: [
+          "You cleared every stage in my city. A residency in each. Loud.",
+          "But the top floor is mine. My headliners will make sure you never reach it.",
+          "No intermissions, {name}. No breather. Let's see what your band is really made of.",
+        ],
+      },
+      { kind: "battle", trainer: "monocorp_enforcer" },
+      { kind: "battle", trainer: "monocorp_curator" },
+      { kind: "battle", trainer: "monocorp_exec" },
+      {
+        kind: "dialogue",
+        speaker: "The Chairman",
+        pages: [
+          "Far enough. Sit. Listen.",
+          "Vy never told you who vanished, did they? It was me. The leader they idolized.",
+          "I didn't disappear, {name}. I WON. I gave this city one perfect, safe, profitable sound - and it stopped fighting.",
+          "Let me give you the same peace.",
+        ],
+      },
+      { kind: "battle", trainer: "monocorp_ceo" },
+      {
+        kind: "dialogue",
+        speaker: "The Chairman",
+        pages: [
+          "...That sound. I used to make that sound. Before I traded it for quiet.",
+          "Go on. Take it all back. The scene was never mine to sell.",
+        ],
+      },
+      {
+        kind: "dialogue",
+        speaker: "Vy the Producer",
+        pages: [
+          "I felt that downtown. The whole block looked UP from their phones.",
+          "You found them, {name}. You found the one who vanished - and you brought the noise home.",
+        ],
+      },
+      { kind: "setFlag", flag: "story.game_complete" },
+      { kind: "win" },
+    ],
+  },
 ];
