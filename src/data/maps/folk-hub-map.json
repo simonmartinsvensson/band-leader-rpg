@@ -541,8 +541,8 @@
         },
         {
           "id": 4,
-          "name": "folk_sign",
-          "type": "npc",
+          "name": "folk_headliner",
+          "type": "trainer",
           "x": 192,
           "y": 96,
           "width": 16,
@@ -551,9 +551,9 @@
           "visible": true,
           "properties": [
             {
-              "name": "dialogue",
+              "name": "trainer",
               "type": "string",
-              "value": "folk_venue_sign"
+              "value": "folk_headliner"
             },
             {
               "name": "facing",
@@ -561,14 +561,9 @@
               "value": "down"
             },
             {
-              "name": "wander",
-              "type": "bool",
-              "value": false
-            },
-            {
               "name": "tint",
               "type": "string",
-              "value": "#9aa0b5"
+              "value": "#27ae60"
             }
           ]
         },

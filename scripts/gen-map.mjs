@@ -567,14 +567,23 @@ function buildDistrict(cfg) {
       obj({ name: "to_route", type: "warp", tx: 16, ty: 10, props: { target: cfg.routeKey, entry: "from_hub" } }),
       // Rehearsal studio heal point (top of the spine; face it to use).
       obj({ name: "rehearsal", type: "heal", tx: 9, ty: 2 }),
-      // The district's venue spot — a sign until Phase 5 builds the venue here.
-      obj({
-        name: `${cfg.genre}_sign`,
-        type: "npc",
-        tx: 12,
-        ty: 6,
-        props: { dialogue: cfg.venueSignDialogue, facing: "down", wander: false, tint: "#9aa0b5" },
-      }),
+      // The district's venue. Once built, the headliner boss stands on the stage
+      // (interaction-only); until then it's a sign placeholder.
+      cfg.hasVenue
+        ? obj({
+            name: `${cfg.genre}_headliner`,
+            type: "trainer",
+            tx: 12,
+            ty: 6,
+            props: { trainer: `${cfg.genre}_headliner`, facing: "down", tint: cfg.flavorTint },
+          })
+        : obj({
+            name: `${cfg.genre}_sign`,
+            type: "npc",
+            tx: 12,
+            ty: 6,
+            props: { dialogue: cfg.venueSignDialogue, facing: "down", wander: false, tint: "#9aa0b5" },
+          }),
       // Gear stall (shared shop) + a genre local.
       obj({
         name: `${cfg.genre}_shop`,
@@ -604,8 +613,8 @@ function buildDistrict(cfg) {
 // The four new genre districts (jazz + electronic already exist as the
 // jazz_club and warehouse areas). Tints come from the genre palette.
 const DISTRICTS = [
-  { genre: "rock", routeKey: "rock_route", hubKey: "rock_hub", routeFile: "rock-route-map.json", hubFile: "rock-hub-map.json", zoneId: "rock_route", townReturnEntry: "from_rock", localDialogue: "rock_local", venueSignDialogue: "rock_venue_sign", flavorTint: "#e74c3c" },
-  { genre: "folk", routeKey: "folk_route", hubKey: "folk_hub", routeFile: "folk-route-map.json", hubFile: "folk-hub-map.json", zoneId: "folk_route", townReturnEntry: "from_folk", localDialogue: "folk_local", venueSignDialogue: "folk_venue_sign", flavorTint: "#27ae60" },
+  { genre: "rock", routeKey: "rock_route", hubKey: "rock_hub", routeFile: "rock-route-map.json", hubFile: "rock-hub-map.json", zoneId: "rock_route", townReturnEntry: "from_rock", localDialogue: "rock_local", venueSignDialogue: "rock_venue_sign", flavorTint: "#e74c3c", hasVenue: true },
+  { genre: "folk", routeKey: "folk_route", hubKey: "folk_hub", routeFile: "folk-route-map.json", hubFile: "folk-hub-map.json", zoneId: "folk_route", townReturnEntry: "from_folk", localDialogue: "folk_local", venueSignDialogue: "folk_venue_sign", flavorTint: "#27ae60", hasVenue: true },
   { genre: "funk", routeKey: "funk_route", hubKey: "funk_hub", routeFile: "funk-route-map.json", hubFile: "funk-hub-map.json", zoneId: "funk_route", townReturnEntry: "from_funk", localDialogue: "funk_local", venueSignDialogue: "funk_venue_sign", flavorTint: "#e67e22" },
   { genre: "classical", routeKey: "classical_route", hubKey: "classical_hub", routeFile: "classical-route-map.json", hubFile: "classical-hub-map.json", zoneId: "classical_route", townReturnEntry: "from_classical", localDialogue: "classical_local", venueSignDialogue: "classical_venue_sign", flavorTint: "#f1c40f" },
 ];

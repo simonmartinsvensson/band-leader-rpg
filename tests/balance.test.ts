@@ -197,3 +197,41 @@ describe("balance: the second venue (the warehouse) is a step up", () => {
     expect(readyRate).toBeGreaterThanOrEqual(0.75);
   });
 });
+
+describe("balance: district venues (the circuit)", () => {
+  // The Amp (rock). Every party already carries the jazz starter Crooner, which
+  // hard-counters rock — so this venue is a LEVEL check, not a counter check.
+  it("Rock / The Amp: under-leveled struggles, a leveled party clears it", () => {
+    const under = [
+      createInstance(SPECIES.rifflet, 9),
+      createInstance(SPECIES.crooner, 9),
+      createInstance(SPECIES.balladeer, 9),
+    ];
+    const ready = [
+      createInstance(SPECIES.rifflet, 13),
+      createInstance(SPECIES.crooner, 13),
+      createInstance(SPECIES.balladeer, 13),
+    ];
+    console.log(`rock: under ${(winRate(under, "rock_headliner") * 100).toFixed(0)}%  ready ${(winRate(ready, "rock_headliner") * 100).toFixed(0)}%`);
+    expect(winRate(under, "rock_headliner")).toBeLessThan(0.6);
+    expect(winRate(ready, "rock_headliner")).toBeGreaterThanOrEqual(0.75);
+  });
+
+  // The Landing (folk). Folk is weak to electronic AND funk, so a leveled party
+  // with NEITHER counter loses; recruiting a funk/electronic player cracks it.
+  it("Folk / The Landing: needs an electronic/funk counter, not just levels", () => {
+    const noCounter = [
+      createInstance(SPECIES.rifflet, 15),
+      createInstance(SPECIES.crooner, 15),
+      createInstance(SPECIES.amplifret, 15),
+    ];
+    const countered = [
+      createInstance(SPECIES.rifflet, 15),
+      createInstance(SPECIES.crooner, 15),
+      createInstance(SPECIES.grooveling, 16), // funk -> 2x into folk
+    ];
+    console.log(`folk: no-counter ${(winRate(noCounter, "folk_headliner") * 100).toFixed(0)}%  countered ${(winRate(countered, "folk_headliner") * 100).toFixed(0)}%`);
+    expect(winRate(noCounter, "folk_headliner")).toBeLessThan(0.5);
+    expect(winRate(countered, "folk_headliner")).toBeGreaterThanOrEqual(0.7);
+  });
+});
