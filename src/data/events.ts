@@ -149,6 +149,70 @@ export const EVENTS: StoryEvent[] = [
     ],
   },
 
+  // === VY'S ARC — recurring scenes at the mentor in town that gradually reveal
+  // the vanished legend (Cass) and Vy's guilt, paying off the finale. Chained on
+  // the previous scene + a circuit milestone. ===
+
+  // After the first venue — the legend gets a name.
+  {
+    id: "vy_arc_2",
+    trigger: { type: "interact", object: "mentor" },
+    requires: ["story.mentor_warning", "story.jazz_won"],
+    once: "story.vy2_done",
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "Vy the Producer",
+        pages: [
+          "You took The Blue Note! Cass would've loved that room.",
+          "...That's the name. Cass. We co-led a band, once, back when the scene was deafening.",
+          "Best ear I ever knew. Then the labels came sniffing, and one night Cass was just - gone.",
+        ],
+      },
+      { kind: "setFlag", flag: "story.vy2_done" },
+    ],
+  },
+
+  // After the second venue — Vy's guilt surfaces.
+  {
+    id: "vy_arc_3",
+    trigger: { type: "interact", object: "mentor" },
+    requires: ["story.vy2_done", "story.electronic_won"],
+    once: "story.vy3_done",
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "Vy the Producer",
+        pages: [
+          "Two residencies. You're doing what Cass and I never finished. I have to tell you something, {name}.",
+          "When the suits courted us, I'm the one who told them where to find Cass. I thought it was our big break.",
+          "I handed them the best of us. I've carried that a long time.",
+        ],
+      },
+      { kind: "setFlag", flag: "story.vy3_done" },
+    ],
+  },
+
+  // After the last district venue — the confession + the push to the Tower.
+  {
+    id: "vy_arc_4",
+    trigger: { type: "interact", object: "mentor" },
+    requires: ["story.vy3_done", "story.classical_won"],
+    once: "story.vy4_done",
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "Vy the Producer",
+        pages: [
+          "Every scene in the city, {name}. Every stage. You actually did it.",
+          "I never believed Cass 'vanished'. People don't vanish - they go quiet. They get bought. They forget their own sound.",
+          "Monocorp Tower, top floor. If Cass is anywhere left to find... go. Bring them home, or end what they built. Finish it.",
+        ],
+      },
+      { kind: "setFlag", flag: "story.vy4_done" },
+    ],
+  },
+
   // === THE RIVAL ARC — Max, across the circuit. Each beat is gated on the
   // previous (chaining the arc) and lives in a different district hub (so he
   // "appears across the circuit"), ending back in town. Relationship state is
@@ -299,8 +363,8 @@ export const EVENTS: StoryEvent[] = [
         speaker: "The Chairman",
         pages: [
           "Far enough. Sit. Listen.",
-          "Vy never told you who vanished, did they? It was me. The leader they idolized.",
-          "I didn't disappear, {name}. I WON. I gave this city one perfect, safe, profitable sound - and it stopped fighting.",
+          "Vy still says the name like a prayer, don't they? Cass. Yes - I was Cass. The leader they idolized.",
+          "I didn't vanish, {name}. I WON. I gave this city one perfect, safe, profitable sound - and it stopped fighting.",
           "Let me give you the same peace.",
         ],
       },

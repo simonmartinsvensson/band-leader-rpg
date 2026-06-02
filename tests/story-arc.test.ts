@@ -107,6 +107,31 @@ describe("rival arc gating", () => {
   });
 });
 
+describe("Vy's backstory arc gating", () => {
+  const mentor = (flags: Flags) => findEvent(EVENTS, { type: "interact", map: "", object: "mentor" }, flags)?.id;
+
+  it("reveals the Cass backstory across the circuit, one scene at a time", () => {
+    // Opening warning done; first venue unlocks scene 2.
+    let f: Flags = { "story.saw_monocorp": true, "story.mentor_warning": true };
+    expect(mentor(f)).toBeUndefined(); // needs a venue first
+    f = { ...f, "story.jazz_won": true };
+    expect(mentor(f)).toBe("vy_arc_2");
+
+    f = { ...f, "story.vy2_done": true };
+    expect(mentor(f)).toBeUndefined(); // needs the 2nd venue
+    f = { ...f, "story.electronic_won": true };
+    expect(mentor(f)).toBe("vy_arc_3");
+
+    f = { ...f, "story.vy3_done": true };
+    expect(mentor(f)).toBeUndefined(); // needs the last district venue
+    f = { ...f, "story.classical_won": true };
+    expect(mentor(f)).toBe("vy_arc_4");
+
+    f = { ...f, "story.vy4_done": true };
+    expect(mentor(f)).toBeUndefined();
+  });
+});
+
 // --- escalation invariants ---------------------------------------------------
 const totalLevel = (id: string) => TRAINERS[id].team.reduce((s, m) => s + m.level, 0);
 
