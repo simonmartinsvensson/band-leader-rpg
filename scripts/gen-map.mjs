@@ -544,6 +544,20 @@ function buildDistrict(cfg) {
       obj({ name: "from_hub", type: "entry", tx: 17, ty: 7 }),
       obj({ name: "to_hub", type: "warp", tx: 18, ty: 7, props: { target: cfg.hubKey, entry: "from_route" } }),
       obj({ name: `${cfg.zoneId}_zone`, type: "encounter", tx: 2, ty: 4, tw: 16, th: 7, props: { zone: cfg.zoneId } }),
+      // A recurring Monocorp A&R rep ambushing the route (appears once the gating
+      // flag is set; line-of-sight battle). Deepens the antagonist district by
+      // district. (Off the path, facing it, so it catches you as you pass.)
+      ...(cfg.arRep
+        ? [
+            obj({
+              name: cfg.arRep.trainer,
+              type: "trainer",
+              tx: 10,
+              ty: 5,
+              props: { trainer: cfg.arRep.trainer, facing: "down", tint: "#5a6b8c", requires: cfg.arRep.requires },
+            }),
+          ]
+        : []),
     ];
     const map = makeMap(W, H, [
       tileLayer(1, "ground", W, H, ground),
@@ -603,6 +617,26 @@ function buildDistrict(cfg) {
         ty: 8,
         props: { dialogue: cfg.localDialogue, facing: "left", wander: true, tint: cfg.flavorTint },
       }),
+      // The recurring rival drops in during one circuit window (appears between
+      // its `requires` and `forbids` flags). Interacting plays that beat.
+      ...(cfg.rivalBeat
+        ? [
+            obj({
+              name: cfg.rivalBeat.name,
+              type: "npc",
+              tx: 6,
+              ty: 7,
+              props: {
+                dialogue: "rival_after",
+                facing: "down",
+                wander: false,
+                tint: "#e74c3c",
+                requires: cfg.rivalBeat.requires,
+                forbids: cfg.rivalBeat.forbids,
+              },
+            }),
+          ]
+        : []),
     ];
     const map = makeMap(W, H, [
       tileLayer(1, "ground", W, H, ground),
@@ -617,10 +651,19 @@ function buildDistrict(cfg) {
 // The four new genre districts (jazz + electronic already exist as the
 // jazz_club and warehouse areas). Tints come from the genre palette.
 const DISTRICTS = [
-  { genre: "rock", routeKey: "rock_route", hubKey: "rock_hub", routeFile: "rock-route-map.json", hubFile: "rock-hub-map.json", zoneId: "rock_route", townReturnEntry: "from_rock", localDialogue: "rock_local", venueSignDialogue: "rock_venue_sign", flavorTint: "#e74c3c", hasVenue: true },
+  // rivalBeat: the rival NPC appears in this hub between `requires` and `forbids`
+  //   flags (its interact beat is in src/data/events.ts).
+  // arRep: a Monocorp A&R-rep trainer ambushes this route once `requires` is set.
+  { genre: "rock", routeKey: "rock_route", hubKey: "rock_hub", routeFile: "rock-route-map.json", hubFile: "rock-hub-map.json", zoneId: "rock_route", townReturnEntry: "from_rock", localDialogue: "rock_local", venueSignDialogue: "rock_venue_sign", flavorTint: "#e74c3c", hasVenue: true,
+    rivalBeat: { name: "rival_rock", requires: "story.met_rival", forbids: "story.rival2_done" },
+    arRep: { trainer: "ar_rep_strip", requires: "story.jazz_won" } },
   { genre: "folk", routeKey: "folk_route", hubKey: "folk_hub", routeFile: "folk-route-map.json", hubFile: "folk-hub-map.json", zoneId: "folk_route", townReturnEntry: "from_folk", localDialogue: "folk_local", venueSignDialogue: "folk_venue_sign", flavorTint: "#27ae60", hasVenue: true },
-  { genre: "funk", routeKey: "funk_route", hubKey: "funk_hub", routeFile: "funk-route-map.json", hubFile: "funk-hub-map.json", zoneId: "funk_route", townReturnEntry: "from_funk", localDialogue: "funk_local", venueSignDialogue: "funk_venue_sign", flavorTint: "#e67e22", hasVenue: true },
-  { genre: "classical", routeKey: "classical_route", hubKey: "classical_hub", routeFile: "classical-route-map.json", hubFile: "classical-hub-map.json", zoneId: "classical_route", townReturnEntry: "from_classical", localDialogue: "classical_local", venueSignDialogue: "classical_venue_sign", flavorTint: "#f1c40f", hasVenue: true },
+  { genre: "funk", routeKey: "funk_route", hubKey: "funk_hub", routeFile: "funk-route-map.json", hubFile: "funk-hub-map.json", zoneId: "funk_route", townReturnEntry: "from_funk", localDialogue: "funk_local", venueSignDialogue: "funk_venue_sign", flavorTint: "#e67e22", hasVenue: true,
+    rivalBeat: { name: "rival_funk", requires: "story.rival2_done", forbids: "story.rival3_done" },
+    arRep: { trainer: "ar_rep_block", requires: "story.electronic_won" } },
+  { genre: "classical", routeKey: "classical_route", hubKey: "classical_hub", routeFile: "classical-route-map.json", hubFile: "classical-hub-map.json", zoneId: "classical_route", townReturnEntry: "from_classical", localDialogue: "classical_local", venueSignDialogue: "classical_venue_sign", flavorTint: "#f1c40f", hasVenue: true,
+    rivalBeat: { name: "rival_classical", requires: "story.rival3_done", forbids: "story.rival4_done" },
+    arRep: { trainer: "ar_rep_hall", requires: "story.electronic_won" } },
 ];
 for (const d of DISTRICTS) buildDistrict(d);
 

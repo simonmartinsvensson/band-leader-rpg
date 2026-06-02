@@ -149,6 +149,122 @@ export const EVENTS: StoryEvent[] = [
     ],
   },
 
+  // === THE RIVAL ARC — Max, across the circuit. Each beat is gated on the
+  // previous (chaining the arc) and lives in a different district hub (so he
+  // "appears across the circuit"), ending back in town. Relationship state is
+  // the set of story.rivalN_done flags (+ rival_signed / rival_redeemed). ===
+
+  // Beat 2 (Rock Strip) — cocky, but Monocorp's noticed him too.
+  {
+    id: "beat_rival2",
+    trigger: { type: "interact", object: "rival_rock" },
+    requires: ["story.met_rival"],
+    once: "story.rival2_done",
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "Rival Max",
+        pages: [
+          "{name}! Heard you took The Blue Note. Don't look so smug.",
+          "Monocorp scouts clocked me at the Strip too, y'know. Maybe I'll hear them out. Maybe I won't.",
+          "First - remind me why I should bother. Go!",
+        ],
+      },
+      { kind: "battle", trainer: "rival_max_2" },
+      {
+        kind: "dialogue",
+        speaker: "Rival Max",
+        pages: ["Lucky. Whatever - some of us have OFFERS to think about.", "See you down the circuit."],
+      },
+      { kind: "setFlag", flag: "story.rival2_done" },
+    ],
+  },
+
+  // Beat 3 (Funk Block) — tempted. Monocorp's made the offer.
+  {
+    id: "beat_rival3",
+    trigger: { type: "interact", object: "rival_funk" },
+    requires: ["story.rival2_done"],
+    once: "story.rival3_done",
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "Rival Max",
+        pages: [
+          "They made the offer, {name}. Real money. A real budget. Tour buses.",
+          "Like this new sound? Monocorp helped me 'refine' it. Slicker, right?",
+          "You'd be a fool to say no. Let me show you what the budget buys.",
+        ],
+      },
+      { kind: "battle", trainer: "rival_max_3" },
+      {
+        kind: "dialogue",
+        speaker: "Rival Max",
+        pages: ["...tch. The money's real even if your little scene isn't.", "I'm taking the deal."],
+      },
+      { kind: "setFlag", flag: "story.rival3_done" },
+    ],
+  },
+
+  // Beat 4 (Classical Hall) — signed. The sound is gone; so is he.
+  {
+    id: "beat_rival4",
+    trigger: { type: "interact", object: "rival_classical" },
+    requires: ["story.rival3_done"],
+    once: "story.rival4_done",
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "Max [Monocorp]",
+        pages: [
+          "It's official now, {name}. See the badge?",
+          "One brand. One sound. It's... efficient. Optimized. The numbers love me.",
+          "Stop looking at me like that and BATTLE.",
+        ],
+      },
+      { kind: "battle", trainer: "rival_max_4" },
+      {
+        kind: "dialogue",
+        speaker: "Max [Monocorp]",
+        pages: ["...why doesn't winning feel like anything anymore?", "Just- just go, {name}. Leave me alone."],
+      },
+      { kind: "setFlag", flag: "story.rival4_done" },
+      { kind: "setFlag", flag: "story.rival_signed" },
+    ],
+  },
+
+  // Beat 5 (back in town) — he quits Monocorp; one honest battle; redemption.
+  // Foreshadows the Chairman (who made the same trade and never came back).
+  {
+    id: "beat_rival5",
+    trigger: { type: "interact", object: "rival_max" },
+    requires: ["story.rival4_done", "story.classical_won"],
+    once: "story.rival5_done",
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "Max",
+        pages: [
+          "Caught you before the Tower. Good. ...I quit them, {name}.",
+          "Couldn't make their sound one more night. It wasn't mine. It wasn't ANYTHING.",
+          "One last battle. No Monocorp tricks - just me. Remind me what I sound like.",
+        ],
+      },
+      { kind: "battle", trainer: "rival_max_5" },
+      {
+        kind: "dialogue",
+        speaker: "Max",
+        pages: [
+          "...Yeah. THAT'S it. The sound I almost traded away forever.",
+          "Whoever's at the top of that Tower? They made the same trade I almost did - and they never found their way back.",
+          "Go remind THEM too. Loud as you can.",
+        ],
+      },
+      { kind: "setFlag", flag: "story.rival5_done" },
+      { kind: "setFlag", flag: "story.rival_redeemed" },
+    ],
+  },
+
   // --- THE FINALE: Monocorp's headliner gauntlet (Elite-Four style) ---
   // Triggered by facing The Chairman atop Monocorp Tower, once every residency
   // is earned. Four boss battles back-to-back (the cutscene chains them, so the

@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 4,
-  "nextobjectid": 7,
+  "nextobjectid": 8,
   "tilesets": [
     {
       "firstgid": 1,
@@ -630,6 +630,49 @@
               "name": "tint",
               "type": "string",
               "value": "#f1c40f"
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "name": "rival_classical",
+          "type": "npc",
+          "x": 96,
+          "y": 112,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "dialogue",
+              "type": "string",
+              "value": "rival_after"
+            },
+            {
+              "name": "facing",
+              "type": "string",
+              "value": "down"
+            },
+            {
+              "name": "wander",
+              "type": "bool",
+              "value": false
+            },
+            {
+              "name": "tint",
+              "type": "string",
+              "value": "#e74c3c"
+            },
+            {
+              "name": "requires",
+              "type": "string",
+              "value": "story.rival3_done"
+            },
+            {
+              "name": "forbids",
+              "type": "string",
+              "value": "story.rival4_done"
             }
           ]
         }

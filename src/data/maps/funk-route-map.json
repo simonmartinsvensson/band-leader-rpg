@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 4,
-  "nextobjectid": 6,
+  "nextobjectid": 7,
   "tilesets": [
     {
       "firstgid": 1,
@@ -705,6 +705,39 @@
               "name": "zone",
               "type": "string",
               "value": "funk_route"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "name": "ar_rep_block",
+          "type": "trainer",
+          "x": 160,
+          "y": 80,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "trainer",
+              "type": "string",
+              "value": "ar_rep_block"
+            },
+            {
+              "name": "facing",
+              "type": "string",
+              "value": "down"
+            },
+            {
+              "name": "tint",
+              "type": "string",
+              "value": "#5a6b8c"
+            },
+            {
+              "name": "requires",
+              "type": "string",
+              "value": "story.electronic_won"
             }
           ]
         }

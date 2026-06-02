@@ -43,6 +43,108 @@ export const TRAINERS: Record<string, Trainer> = {
     postLine: ["Go on, the venues are waiting for you."],
     sightRange: 3,
   },
+  // --- The rival's recurring teams (one per circuit beat; see src/data/events.ts).
+  // Eclectic at first, drifting toward Monocorp's slick sound mid-arc, then back
+  // to his own roots once he's pulled out of it. Side battles (opt-in), so they
+  // stay peer-level rather than venue-level.
+  rival_max_2: {
+    id: "rival_max_2",
+    name: "Rival Max",
+    team: [
+      { species: "grooveling", level: 10 },
+      { species: "synthling", level: 11 },
+      { species: "amplifret", level: 11 },
+    ],
+    reward: 500,
+    intro: ["Round two, {name}."],
+    defeatLine: ["Still got it, huh. We'll see how long that lasts."],
+    postLine: ["Don't get comfortable."],
+    sightRange: 0,
+  },
+  rival_max_3: {
+    id: "rival_max_3",
+    name: "Rival Max",
+    team: [
+      { species: "synthling", level: 15 },
+      { species: "grooveling", level: 15 },
+      { species: "voltaxe", level: 16 },
+    ],
+    reward: 800,
+    intro: ["Like the new sound? Monocorp helped me 'refine' it."],
+    defeatLine: ["...tch. Whatever. The money's real, {name}."],
+    postLine: ["You'll come around."],
+    sightRange: 0,
+  },
+  rival_max_4: {
+    id: "rival_max_4",
+    name: "Max [Monocorp]",
+    team: [
+      { species: "voltaxe", level: 19 },
+      { species: "synthrax", level: 20 },
+      { species: "orchestron", level: 21 },
+    ],
+    reward: 1200,
+    intro: ["Official now. One brand. One sound."],
+    defeatLine: ["...why doesn't winning feel like anything anymore?"],
+    postLine: ["Just leave me alone."],
+    sightRange: 0,
+  },
+  rival_max_5: {
+    id: "rival_max_5",
+    name: "Max",
+    team: [
+      { species: "grooveling", level: 24 },
+      { species: "synthling", level: 25 },
+      { species: "fusionaut", level: 26 },
+    ],
+    reward: 2000,
+    intro: ["No Monocorp tricks this time. Just me. My sound. One last time, {name}."],
+    defeatLine: ["...Yeah. THAT'S the sound I lost. Thanks for the reminder."],
+    postLine: ["Go take down the Tower. I'll be playing my own stuff - loud."],
+    sightRange: 0,
+  },
+  // --- Monocorp A&R reps: recurring lower-tier trainers that spread across the
+  // districts as you progress (line-of-sight ambushes on the routes).
+  ar_rep_strip: {
+    id: "ar_rep_strip",
+    name: "Monocorp A&R",
+    team: [
+      { species: "voltaxe", level: 10 },
+      { species: "synthrax", level: 11 },
+    ],
+    reward: 700,
+    intro: ["Monocorp A&R. We're scouting every district now.", "Sign, or be forgotten. Let me show you which."],
+    defeatLine: ["Noted. Flagging you as... uncooperative."],
+    postLine: ["Corporate has your file now."],
+    sightRange: 2,
+  },
+  ar_rep_block: {
+    id: "ar_rep_block",
+    name: "Monocorp A&R",
+    team: [
+      { species: "synthrax", level: 16 },
+      { species: "orchestron", level: 17 },
+    ],
+    reward: 1100,
+    intro: ["You're still making... whatever this is?", "The Block is next on our acquisition list."],
+    defeatLine: ["The numbers said I'd win. The numbers lied."],
+    postLine: ["You can't out-market the whole company."],
+    sightRange: 2,
+  },
+  ar_rep_hall: {
+    id: "ar_rep_hall",
+    name: "Senior A&R",
+    team: [
+      { species: "orchestron", level: 19 },
+      { species: "voltaxe", level: 20 },
+      { species: "synthrax", level: 21 },
+    ],
+    reward: 1600,
+    intro: ["Senior A&R. I don't scout - I clean up.", "The Chairman's watching you climb. He is not amused."],
+    defeatLine: ["He'll handle you himself, then. Good luck with that."],
+    postLine: ["The top floor is expecting you."],
+    sightRange: 2,
+  },
   jazz_headliner: {
     id: "jazz_headliner",
     name: "Headliner Vera",
