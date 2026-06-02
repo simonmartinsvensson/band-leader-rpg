@@ -46,8 +46,17 @@ export class WinScene extends Phaser.Scene {
       createText(this, GAME_WIDTH / 2, 58 + i * 11, `${m.nickname}  (${species})  Lv${m.level}`, { origin: 0.5 });
     });
 
-    createText(this, GAME_WIDTH / 2, GAME_HEIGHT - 30, "Band Leader RPG", { color: 0x8b8b9b, origin: 0.5 });
-    createText(this, GAME_WIDTH / 2, GAME_HEIGHT - 20, "Thanks for playing!", { color: 0x8b8b9b, origin: 0.5 });
+    // Credits / attribution. The character art is from LimeZu's Modern Interiors
+    // (free) pack, used under its non-commercial license (credit required).
+    createText(this, GAME_WIDTH / 2, GAME_HEIGHT - 32, "Art: LimeZu (Modern Interiors)", {
+      color: 0x8b8b9b,
+      origin: 0.5,
+    });
+    createText(this, GAME_WIDTH / 2, GAME_HEIGHT - 22, "limezu.itch.io/moderninteriors", {
+      color: 0x6b6b7b,
+      origin: 0.5,
+    });
+    createText(this, GAME_WIDTH / 2, GAME_HEIGHT - 12, "Thanks for playing!", { color: 0x8b8b9b, origin: 0.5 });
 
     const kb = this.input.keyboard!;
     const KC = Phaser.Input.Keyboard.KeyCodes;

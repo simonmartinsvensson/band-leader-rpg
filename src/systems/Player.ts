@@ -1,24 +1,25 @@
 import type Phaser from "phaser";
 import { TILE_SIZE } from "../data/constants";
-import { AssetKeys, PlayerFrame } from "../data/assets";
+import { PLAYER_CHARACTER } from "../data/characters";
+import { idleFrameIndex, walkAnimKey } from "../ui/characterAnims";
 import { DIRECTION_VECTORS, type Direction } from "../types/direction";
 import type { WorldGrid } from "../types/grid";
 
 /** Time to tween one tile, in ms. Short, FireRed-ish walking pace. */
 const STEP_DURATION = 150;
 
-/** Which spritesheet frame faces which direction. */
-const FRAME_FOR: Record<Direction, number> = {
-  down: PlayerFrame.DOWN,
-  up: PlayerFrame.UP,
-  left: PlayerFrame.LEFT,
-  right: PlayerFrame.RIGHT,
-};
+/** Depth band for the player sprite (above NPCs, below UI/hints). */
+const PLAYER_DEPTH = 10;
 
 /**
  * Owns the player's grid position, facing, and the tile-by-tile movement state
  * machine. The player lives on a 16px grid: each step tweens exactly one tile
  * and movement is locked until the tween finishes, so the grid can never desync.
+ *
+ * The sprite is a 16x32 LimeZu character: one tile wide, two tall. It's anchored
+ * by its feet (origin 0.5, 1) at the bottom of its tile, so the body overhangs
+ * the tile above while the *logical* position stays one tile. Movement plays the
+ * facing direction's walk cycle; standing shows that direction's idle frame.
  *
  * `update(intent)` is called once per frame with the step intent for this frame
  * (a direction to step, or null). Edge-detection / auto-repeat is the input
@@ -27,12 +28,14 @@ const FRAME_FOR: Record<Direction, number> = {
  * one tile, independent of STEP_DURATION.
  *
  * Engine-agnostic at runtime: Phaser is imported as a type only, so this class
- * (and its tests) need no browser/Phaser runtime.
+ * (and its tests) need no browser/Phaser runtime. Animation calls are guarded so
+ * a minimal stub sprite (as in the unit tests) works without an anim system.
  */
 export class Player {
   private readonly scene: Phaser.Scene;
   private readonly sprite: Phaser.GameObjects.Sprite;
   private readonly world: WorldGrid;
+  private readonly textureKey = PLAYER_CHARACTER;
 
   private gridX: number;
   private gridY: number;
@@ -49,9 +52,9 @@ export class Player {
     this.world = world;
 
     this.sprite = scene.add
-      .sprite(this.pixelAt(gridX), this.pixelAt(gridY), AssetKeys.PLAYER, FRAME_FOR.down)
-      .setOrigin(0.5)
-      .setDepth(10);
+      .sprite(centerX(gridX), footY(gridY), this.textureKey, idleFrameIndex("down"))
+      .setOrigin(0.5, 1)
+      .setDepth(PLAYER_DEPTH);
   }
 
   get isMoving(): boolean {
@@ -83,23 +86,30 @@ export class Player {
   update(intent: Direction | null): void {
     // Locked while a step tween runs — intents during a step are simply ignored,
     // which is what keeps a single tap to exactly one tile.
-    if (this.moving || !intent) return;
+    if (this.moving) return;
+    if (!intent) {
+      this.showIdle(); // standing still: snap to the idle frame
+      return;
+    }
 
     // Always face the requested direction, even if the step is blocked
     // (FireRed turns in place against a wall). Today only the grid edge blocks.
-    this.face(intent);
+    this.facing = intent;
 
     const { x: dx, y: dy } = DIRECTION_VECTORS[intent];
     const targetX = this.gridX + dx;
     const targetY = this.gridY + dy;
     if (this.canEnter(targetX, targetY)) {
-      this.step(targetX, targetY);
+      this.step(targetX, targetY); // keeps the walk cycle running between steps
+    } else {
+      this.showIdle(); // turned in place against a wall
     }
   }
 
   /** Turn to face a direction without moving (used by scripted cutscenes). */
   turn(direction: Direction): void {
-    this.face(direction);
+    this.facing = direction;
+    this.showIdle();
   }
 
   /**
@@ -109,45 +119,60 @@ export class Player {
    */
   walk(direction: Direction): boolean {
     if (this.moving) return false;
-    this.face(direction);
+    this.facing = direction;
     const { x: dx, y: dy } = DIRECTION_VECTORS[direction];
     const targetX = this.gridX + dx;
     const targetY = this.gridY + dy;
-    if (!this.canEnter(targetX, targetY)) return false;
-    this.step(targetX, targetY);
+    if (!this.canEnter(targetX, targetY)) {
+      this.showIdle();
+      return false;
+    }
+    this.step(targetX, targetY, true); // discrete scripted step: stand when it lands
     return true;
   }
 
-  private face(direction: Direction): void {
-    this.facing = direction;
-    // Use directional frames only if the sheet actually has them.
-    if (this.sprite.texture.frameTotal > 1) {
-      this.sprite.setFrame(FRAME_FOR[direction]);
-    }
-  }
-
-  private step(targetX: number, targetY: number): void {
+  private step(targetX: number, targetY: number, idleOnComplete = false): void {
     this.moving = true;
+    this.playWalk();
     this.scene.tweens.add({
       targets: this.sprite,
-      x: this.pixelAt(targetX),
-      y: this.pixelAt(targetY),
+      x: centerX(targetX),
+      y: footY(targetY),
       duration: STEP_DURATION,
       onComplete: () => {
         this.gridX = targetX;
         this.gridY = targetY;
         this.moving = false;
+        if (idleOnComplete) this.showIdle();
         this.onStepComplete?.(targetX, targetY);
       },
     });
   }
 
+  /** Play the facing direction's walk cycle (no-op if already playing it). */
+  private playWalk(): void {
+    const s = this.sprite as unknown as { play?: (key: string, ignoreIfPlaying?: boolean) => unknown };
+    s.play?.(walkAnimKey(this.textureKey, this.facing), true);
+  }
+
+  /** Stop any walk anim and show the facing direction's idle frame. */
+  private showIdle(): void {
+    const s = this.sprite as unknown as { anims?: { stop?: () => void } };
+    s.anims?.stop?.();
+    if (this.sprite.texture.frameTotal > 1) this.sprite.setFrame(idleFrameIndex(this.facing));
+  }
+
   private canEnter(x: number, y: number): boolean {
     return x >= 0 && y >= 0 && x < this.world.cols && y < this.world.rows && !this.world.isBlocked(x, y);
   }
+}
 
-  /** Center pixel of a tile index, for either axis (tiles are square). */
-  private pixelAt(tile: number): number {
-    return tile * TILE_SIZE + TILE_SIZE / 2;
-  }
+/** Center pixel (x) of a tile column. */
+function centerX(tile: number): number {
+  return tile * TILE_SIZE + TILE_SIZE / 2;
+}
+
+/** Bottom pixel (y) of a tile row — the foot anchor for a 16x32 character. */
+function footY(tile: number): number {
+  return tile * TILE_SIZE + TILE_SIZE;
 }
