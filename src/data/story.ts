@@ -32,9 +32,48 @@ export const STORY: Milestone[] = [
     flag: "story.mentor_warning",
   },
   {
-    id: "first_residency",
+    id: "jazz_won",
     chapter: "Chapter 2: First Gig",
-    objective: "Win your first residency at The Blue Note.",
-    flag: "story.jazz_residency_won",
+    objective: "Win your first residency at The Blue Note (jazz).",
+    flag: "story.jazz_won",
+  },
+  // Chapter 3 — the circuit: clear the rest of the city's venues (each boss sets
+  // its flag on defeat, see src/data/trainers.ts). Branching order; the current
+  // objective points at the first one you haven't cleared.
+  {
+    id: "electronic_won",
+    chapter: "Chapter 3: The Circuit",
+    objective: "Headline The Warehouse (electronic), east of town.",
+    flag: "story.electronic_won",
+  },
+  {
+    id: "rock_won",
+    chapter: "Chapter 3: The Circuit",
+    objective: "Tear up The Amp on the Rock Strip.",
+    flag: "story.rock_won",
+  },
+  {
+    id: "folk_won",
+    chapter: "Chapter 3: The Circuit",
+    objective: "Play The Landing on the Folk Riverside.",
+    flag: "story.folk_won",
+  },
+  {
+    id: "funk_won",
+    chapter: "Chapter 3: The Circuit",
+    objective: "Find the groove at The Pocket in the Funk Block.",
+    flag: "story.funk_won",
+  },
+  {
+    id: "classical_won",
+    chapter: "Chapter 3: The Circuit",
+    objective: "Command The Conservatory in the Classical Hall.",
+    flag: "story.classical_won",
+  },
+  {
+    id: "game_complete",
+    chapter: "Chapter 4: The Tower",
+    objective: "Every residency earned. Face Monocorp at the Tower downtown.",
+    flag: "story.game_complete",
   },
 ];

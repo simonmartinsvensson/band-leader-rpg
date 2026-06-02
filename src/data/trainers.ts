@@ -24,6 +24,9 @@ export interface Trainer {
   sightRange: number;
   /** If set, defeating this trainer grants the residency (venue boss). */
   residency?: string;
+  /** If set, defeating this trainer sets this story flag (advances the main
+   *  objective — see src/data/story.ts). Venue bosses + the finale use this. */
+  storyFlag?: string;
 }
 
 export const TRAINERS: Record<string, Trainer> = {
@@ -49,10 +52,11 @@ export const TRAINERS: Record<string, Trainer> = {
     ],
     reward: 800,
     intro: ["Welcome to The Blue Note.", "Show me your band can swing."],
-    defeatLine: ["Beautiful. That's a headliner's sound."],
+    defeatLine: ["Beautiful. That's a headliner's sound.", "Word travels fast in this city - go earn the rest."],
     postLine: ["The Blue Note is yours whenever you like."],
     sightRange: 4,
     residency: "jazz",
+    storyFlag: "story.jazz_won",
   },
   // The warehouse's opening act — guards the door to the venue floor. A clear
   // step above the rival in town, but below the headliner behind him.
@@ -79,10 +83,11 @@ export const TRAINERS: Record<string, Trainer> = {
     ],
     reward: 1400,
     intro: ["So you cleared the door. Cute.", "Out here the beat never drops. Let's see you keep up."],
-    defeatLine: ["...no way. You actually rode that out."],
+    defeatLine: ["...no way. You actually rode that out.", "Monocorp hates a sound they can't quantize. Keep it loud."],
     postLine: ["The Warehouse is yours. The circuit's listening now."],
     sightRange: 4,
     residency: "electronic",
+    storyFlag: "story.electronic_won",
   },
 };
 

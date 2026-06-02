@@ -32,6 +32,8 @@ export interface BattleTrainer {
   name: string;
   reward: number;
   residency?: string;
+  /** Story flag set on defeat (advances the main objective). */
+  storyFlag?: string;
   defeatLine: string[];
 }
 
@@ -667,6 +669,13 @@ export class BattleScene extends Phaser.Scene {
       addResidency(this.registry.get("residencies") ?? [], trainer.residency);
       const name = getResidency(trainer.residency)?.name ?? "residency";
       messages.push(`You earned the ${name}!`);
+    }
+
+    // Advance the main story: defeating a venue boss (or the finale) sets a flag.
+    if (trainer.storyFlag) {
+      const flags = (this.registry.get("flags") ?? {}) as Record<string, boolean>;
+      flags[trainer.storyFlag] = true;
+      this.registry.set("flags", flags);
     }
 
     console.log(`battle outcome: trainer_defeated ${trainer.id}${trainer.residency ? ` residency:${trainer.residency}` : ""}`);
