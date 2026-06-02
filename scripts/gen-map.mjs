@@ -240,6 +240,9 @@ mkdirSync(OUT_DIR, { recursive: true });
       props: { zone: "busking_street" },
     }),
     obj({ name: "poster_busk", type: "lore", tx: 16, ty: 12, props: { lore: "poster_busk" } }),
+    // Sidequest givers (downtown): the record collector + the mixtape kid.
+    obj({ name: "sq_collector", type: "npc", tx: 8, ty: 3, props: { dialogue: "sq_collector", facing: "left", wander: false, tint: "#c9a227" } }),
+    obj({ name: "sq_sender", type: "npc", tx: 8, ty: 11, props: { dialogue: "sq_sender", facing: "left", wander: false, tint: "#7cc4ff" } }),
   ];
 
   const map = makeMap(W, H, [
@@ -415,6 +418,8 @@ mkdirSync(OUT_DIR, { recursive: true });
     obj({ name: "from_warehouse", type: "entry", tx: 19, ty: 8 }),
     obj({ name: "to_warehouse", type: "warp", tx: 20, ty: 8, props: { target: "warehouse", entry: "from_park" } }),
     obj({ name: "note_park", type: "lore", tx: 4, ty: 12, props: { lore: "note_park" } }),
+    // Sidequest: the park ringer (the "Prove It" battle challenge).
+    obj({ name: "sq_ringer_npc", type: "npc", tx: 6, ty: 5, props: { dialogue: "sq_ringer", facing: "down", wander: false, tint: "#e67e22" } }),
   ];
 
   const map = makeMap(W, H, [
@@ -647,6 +652,10 @@ function buildDistrict(cfg) {
         : []),
       // A scattered piece of collectible lore tucked in the corner.
       ...(cfg.lore ? [obj({ name: cfg.lore, type: "lore", tx: 2, ty: 3, props: { lore: cfg.lore } })] : []),
+      // An optional sidequest NPC posted in this hub.
+      ...(cfg.sqNpc
+        ? [obj({ name: cfg.sqNpc.name, type: "npc", tx: 6, ty: 7, props: { dialogue: cfg.sqNpc.dialogue, facing: "down", wander: false, tint: "#27ae60" } })]
+        : []),
     ];
     const map = makeMap(W, H, [
       tileLayer(1, "ground", W, H, ground),
@@ -667,7 +676,8 @@ const DISTRICTS = [
   { genre: "rock", routeKey: "rock_route", hubKey: "rock_hub", routeFile: "rock-route-map.json", hubFile: "rock-hub-map.json", zoneId: "rock_route", townReturnEntry: "from_rock", localDialogue: "rock_local", venueSignDialogue: "rock_venue_sign", flavorTint: "#e74c3c", hasVenue: true,
     rivalBeat: { name: "rival_rock", requires: "story.met_rival", forbids: "story.rival2_done" },
     arRep: { trainer: "ar_rep_strip", requires: "story.jazz_won" }, lore: "poster_strip" },
-  { genre: "folk", routeKey: "folk_route", hubKey: "folk_hub", routeFile: "folk-route-map.json", hubFile: "folk-hub-map.json", zoneId: "folk_route", townReturnEntry: "from_folk", localDialogue: "folk_local", venueSignDialogue: "folk_venue_sign", flavorTint: "#27ae60", hasVenue: true, lore: "record_river" },
+  { genre: "folk", routeKey: "folk_route", hubKey: "folk_hub", routeFile: "folk-route-map.json", hubFile: "folk-hub-map.json", zoneId: "folk_route", townReturnEntry: "from_folk", localDialogue: "folk_local", venueSignDialogue: "folk_venue_sign", flavorTint: "#27ae60", hasVenue: true, lore: "record_river",
+    sqNpc: { name: "sq_recipient", dialogue: "sq_recipient" } },
   { genre: "funk", routeKey: "funk_route", hubKey: "funk_hub", routeFile: "funk-route-map.json", hubFile: "funk-hub-map.json", zoneId: "funk_route", townReturnEntry: "from_funk", localDialogue: "funk_local", venueSignDialogue: "funk_venue_sign", flavorTint: "#e67e22", hasVenue: true,
     rivalBeat: { name: "rival_funk", requires: "story.rival2_done", forbids: "story.rival3_done" },
     arRep: { trainer: "ar_rep_block", requires: "story.electronic_won" }, lore: "poster_block" },

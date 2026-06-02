@@ -43,6 +43,21 @@ export const TRAINERS: Record<string, Trainer> = {
     postLine: ["Go on, the venues are waiting for you."],
     sightRange: 3,
   },
+  // Sidequest: the park's self-styled best busker (the "Prove It" challenge).
+  sq_ringer: {
+    id: "sq_ringer",
+    name: "Park Ringer",
+    team: [
+      { species: "grooveling", level: 10 },
+      { species: "balladeer", level: 11 },
+    ],
+    reward: 300,
+    intro: ["Best busker in this park, that's me."],
+    defeatLine: ["...okay. Okay! You've got the goods."],
+    postLine: ["Still the best - after you."],
+    sightRange: 0,
+  },
+
   // --- The rival's recurring teams (one per circuit beat; see src/data/events.ts).
   // Eclectic at first, drifting toward Monocorp's slick sound mid-arc, then back
   // to his own roots once he's pulled out of it. Side battles (opt-in), so they

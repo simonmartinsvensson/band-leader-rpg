@@ -137,6 +137,33 @@ describe("Vy's backstory arc gating", () => {
 // --- escalation invariants ---------------------------------------------------
 const totalLevel = (id: string) => TRAINERS[id].team.reduce((s, m) => s + m.level, 0);
 
+describe("sidequests (give -> condition -> reward)", () => {
+  const at = (object: string, flags: Flags) =>
+    findEvent(EVENTS, { type: "interact", map: "", object }, flags)?.id;
+
+  it("SQ1 'The Lost Record' gates completion on finding the river lore", () => {
+    expect(at("sq_collector", {})).toBe("sq1_give");
+    // Started but lore not found -> no eligible beat (falls back to base dialogue).
+    expect(at("sq_collector", { "story.sq1_started": true })).toBeUndefined();
+    // Found the record lore -> completion unlocks.
+    expect(at("sq_collector", { "story.sq1_started": true, "lore.record_river": true })).toBe("sq1_done");
+    // Completed -> a repeatable thanks line.
+    expect(at("sq_collector", { "story.sq1_started": true, "story.sq1_done": true })).toBe("sq1_thanks");
+  });
+
+  it("SQ2 'Prove It' is a one-shot challenge then thanks", () => {
+    expect(at("sq_ringer_npc", {})).toBe("sq2_challenge");
+    expect(at("sq_ringer_npc", { "story.sq2_done": true })).toBe("sq2_thanks");
+  });
+
+  it("SQ3 'Mixtape Delivery' needs the mixtape before the recipient pays out", () => {
+    expect(at("sq_sender", {})).toBe("sq3_give");
+    expect(at("sq_recipient", {})).toBeUndefined(); // can't deliver what you don't have
+    expect(at("sq_recipient", { "story.sq3_started": true })).toBe("sq3_done");
+    expect(at("sq_recipient", { "story.sq3_done": true })).toBe("sq3_recipient_thanks");
+  });
+});
+
 describe("the world reacts (flavour NPCs)", () => {
   const interactId = (object: string, flags: Flags) =>
     findEvent(EVENTS, { type: "interact", map: "", object }, flags)?.id;

@@ -425,6 +425,114 @@ export const EVENTS: StoryEvent[] = [
     ],
   },
 
+  // === SIDEQUESTS — small, self-contained NPC stories with a reward on
+  // completion (give -> condition -> reward), driven entirely by interact events
+  // + flags. Each NPC has a base/idle dialogue (src/data/dialogues.ts) as the
+  // fallback between/after beats. ===
+
+  // SQ1 "The Lost Record" — find a Cass 45 (ties into the lore collectible).
+  {
+    id: "sq1_give",
+    trigger: { type: "interact", object: "sq_collector" },
+    once: "story.sq1_started",
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "Record Collector",
+        pages: [
+          "You've got good ears, I can tell. Do me a favour, {name}?",
+          "I lost my favourite 45 down by the river - 'Cass: Riverside Sessions.'",
+          "If you find it survived, come tell me. I'll make it worth your while.",
+        ],
+      },
+      { kind: "setFlag", flag: "story.sq1_started" },
+    ],
+  },
+  {
+    id: "sq1_done",
+    trigger: { type: "interact", object: "sq_collector" },
+    requires: ["story.sq1_started", "lore.record_river"],
+    once: "story.sq1_done",
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "Record Collector",
+        pages: ["You heard it?! It still PLAYS? That warm old sound...", "Thank you, {name}. Take these - and a little something for the trouble."],
+      },
+      { kind: "giveItem", item: "demo_tape", qty: 2 },
+      { kind: "giveCurrency", amount: 600 },
+      { kind: "setFlag", flag: "story.sq1_done" },
+    ],
+  },
+  {
+    id: "sq1_thanks",
+    trigger: { type: "interact", object: "sq_collector" },
+    requires: ["story.sq1_done"],
+    steps: [{ kind: "dialogue", speaker: "Record Collector", pages: ["Keep that old sound alive out there, {name}."] }],
+  },
+
+  // SQ2 "Prove It" — a one-shot battle challenge in the park.
+  {
+    id: "sq2_challenge",
+    trigger: { type: "interact", object: "sq_ringer_npc" },
+    once: "story.sq2_done",
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "Park Ringer",
+        pages: ["Think you've got a sound, newcomer? I'm the best busker in this park.", "Beat me and my lucky pick is yours. Let's go!"],
+      },
+      { kind: "battle", trainer: "sq_ringer" },
+      { kind: "dialogue", speaker: "Park Ringer", pages: ["...alright, alright! You've got it, {name}.", "Here - my lucky pick. Plays sweeter than it has any right to."] },
+      { kind: "giveItem", item: "hype_track", qty: 1 },
+      { kind: "giveCurrency", amount: 500 },
+      { kind: "setFlag", flag: "story.sq2_done" },
+    ],
+  },
+  {
+    id: "sq2_thanks",
+    trigger: { type: "interact", object: "sq_ringer_npc" },
+    requires: ["story.sq2_done"],
+    steps: [{ kind: "dialogue", speaker: "Park Ringer", pages: ["Still the best in the park - after you, {name}. Heh."] }],
+  },
+
+  // SQ3 "Mixtape Delivery" — carry a mixtape from downtown to the Riverside.
+  {
+    id: "sq3_give",
+    trigger: { type: "interact", object: "sq_sender" },
+    once: "story.sq3_started",
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "Mixtape Kid",
+        pages: ["Hey, you look like you get around. Take this mixtape to my friend on the Riverside?", "They've been down lately. This'll lift them right up."],
+      },
+      { kind: "setFlag", flag: "story.sq3_started" },
+    ],
+  },
+  {
+    id: "sq3_done",
+    trigger: { type: "interact", object: "sq_recipient" },
+    requires: ["story.sq3_started"],
+    once: "story.sq3_done",
+    steps: [
+      {
+        kind: "dialogue",
+        speaker: "Riverside Friend",
+        pages: ["A mixtape? All the way out here, for me? ...Oh, this is beautiful.", "Tell them thank you, {name}. And take this for the road - you've earned it."],
+      },
+      { kind: "giveItem", item: "energy_drink", qty: 2 },
+      { kind: "giveCurrency", amount: 400 },
+      { kind: "setFlag", flag: "story.sq3_done" },
+    ],
+  },
+  {
+    id: "sq3_recipient_thanks",
+    trigger: { type: "interact", object: "sq_recipient" },
+    requires: ["story.sq3_done"],
+    steps: [{ kind: "dialogue", speaker: "Riverside Friend", pages: ["That mixtape's been on repeat by the water. Thank your friend again!"] }],
+  },
+
   // --- THE FINALE: Monocorp's headliner gauntlet (Elite-Four style) ---
   // Triggered by facing The Chairman atop Monocorp Tower, once every residency
   // is earned. Four boss battles back-to-back (the cutscene chains them, so the

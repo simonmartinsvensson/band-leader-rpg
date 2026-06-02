@@ -133,6 +133,23 @@ export const DIALOGUES: Record<string, Dialogue> = {
     speaker: "Sign",
     pages: ['"THE CONSERVATORY - concert hall."', "Tuning the room. Doors open in due time."],
   },
+  // --- Sidequest NPC base/fallback lines (the quest beats live in events.ts) ---
+  sq_collector: {
+    speaker: "Record Collector",
+    pages: ["Still no sign of my record? It's a Cass 45 - the Riverside Sessions.", "If it survived anywhere, it'd be near the water."],
+  },
+  sq_ringer: {
+    speaker: "Park Ringer",
+    pages: ["Plenty of buskers in this park. None better than me, though."],
+  },
+  sq_sender: {
+    speaker: "Mixtape Kid",
+    pages: ["That mixtape won't deliver itself! My friend's out on the Riverside.", "Folk type. You'll know them when you hear them."],
+  },
+  sq_recipient: {
+    speaker: "Riverside Friend",
+    pages: ["Oh - hello there. Lovely day for it by the water, isn't it?"],
+  },
   // Monocorp Tower (the finale location).
   tower_guard: {
     speaker: "Tower Lobby",
