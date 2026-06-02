@@ -502,6 +502,28 @@ real `rival_max` battle → `story.met_rival`), `beat_monocorp` (a Monocorp rep 
 `story.mentor_warning`). The objective HUD advances through each, ending on "Win your first
 residency at The Blue Note."
 
+**Recurring cast & arcs** (all data — `src/data/events.ts` beats + `src/data/trainers.ts` teams,
+with NPCs placed flag-gated via `scripts/gen-map.mjs`; the relationship state IS the set of story
+flags). Each beat chains on the previous one's flag, so the arcs stay ordered no matter the route:
+
+- **The rival (Max)** — five beats across the circuit with escalating teams (`rival_max`,
+  `rival_max_2..5`): cocky (town) → tempted by Monocorp (Rock Strip) → takes the offer (Funk Block)
+  → signed, "Max [Monocorp]" (Classical Hall) → quits and is redeemed in town before the finale
+  (`story.rival2_done`…`rival5_done`, plus `rival_signed`/`rival_redeemed`). His NPC appears in each
+  hub only inside its `requires`/`forbids` flag window.
+- **The mentor (Vy)** — recurring town scenes (`vy_arc_2..4`) that name the vanished legend
+  (**Cass**) and reveal Vy's guilt, gated on circuit milestones, paying off the finale (the Chairman
+  is Cass).
+- **The antagonist** — recurring lower-tier **Monocorp A&R reps** (`ar_rep_strip`/`block`/`hall`,
+  escalating) ambush the district routes as you progress, plus the four finale bosses.
+- **Reactive flavour** — repeatable, flag-gated beats (no `once`/`setFlag`) that swap an NPC's lines
+  with progress (district locals after their venue falls; the busker tracking Max's arc + a post-game
+  line). They pre-empt the NPC's base dialogue and are mutually exclusive so order is irrelevant.
+
+`tests/story-arc.test.ts` guards all of this: full map-reference integrity (every
+warp/gate/dialogue/trainer/zone resolves), event well-formedness, the rival + Vy arc gating
+sequences, reactive-line resolution, and trainer escalation invariants.
+
 Pure logic is unit-tested in `tests/story.test.ts` (flags/gating/progression, `interpolate`, + a
 full cutscene run through `runCutscene` with mock handlers); the save round-trip incl. `playerName`
 is in `tests/save.test.ts`.
