@@ -169,6 +169,20 @@ export const SPECIES: Record<string, MusicianSpecies> = {
   glitchard: { id: "glitchard", name: "Glitchard", genres: ["electronic"], baseStats: { stamina: 44, skill: 66, composure: 40, tempo: 66 }, learnset: { 1: ["sync_pulse"], 6: ["bitcrush"], 11: ["wobble_bass"] }, recruitDifficulty: 0.55 },
   modulord: { id: "modulord", name: "Modulord", genres: ["electronic"], baseStats: { stamina: 50, skill: 68, composure: 46, tempo: 64 }, learnset: { 1: ["sync_pulse"], 6: ["sidechain"], 11: ["drop"] }, recruitDifficulty: 0.7 },
   technotron: { id: "technotron", name: "Technotron", genres: ["electronic", "classical"], baseStats: { stamina: 52, skill: 66, composure: 50, tempo: 58 }, learnset: { 1: ["sync_pulse"], 6: ["arpeggio"], 11: ["drop"] }, recruitDifficulty: 0.65 },
+
+  // === SIGNATURE musicians: very hard to recruit, tied to specific (often
+  // story-gated) locations - see the signature zones in src/data/encounters.ts. ===
+  // Cassette — an echo of Cass / the old scene's warmest, most human sound (folk
+  // + jazz, the antithesis of Monocorp's machine). Lingers backstage at The Blue
+  // Note (the jazz-residency reward area).
+  cassette: { id: "cassette", name: "Cassette", genres: ["folk", "jazz"], baseStats: { stamina: 64, skill: 58, composure: 60, tempo: 48 }, learnset: { 1: ["blue_note", "fingerpick"], 8: ["trading_fours"], 16: ["barn_burner"] }, recruitDifficulty: 0.85 },
+  // Genre aces — legendary locals, rare in their home district.
+  riffraffe: { id: "riffraffe", name: "Riffraffe", genres: ["rock"], baseStats: { stamina: 56, skill: 72, composure: 48, tempo: 58 }, learnset: { 1: ["power_chord"], 8: ["feedback_wail"], 14: ["wall_of_sound"], 20: ["stage_dive"] }, recruitDifficulty: 0.8 },
+  bassolossus: { id: "bassolossus", name: "Bassolossus", genres: ["funk"], baseStats: { stamina: 60, skill: 64, composure: 52, tempo: 60 }, learnset: { 1: ["slap_bass"], 8: ["drop_the_one"], 16: ["p_funk"] }, recruitDifficulty: 0.8 },
+  maestrissimo: { id: "maestrissimo", name: "Maestrissimo", genres: ["classical"], baseStats: { stamina: 64, skill: 60, composure: 72, tempo: 40 }, learnset: { 1: ["sonata"], 8: ["fugue"], 16: ["grand_finale"] }, recruitDifficulty: 0.85 },
+  // Aurora — Monocorp's pristine machine sound, beautiful in spite of itself.
+  // Found after hours in the warehouse backstage (electronic-residency reward).
+  aurora: { id: "aurora", name: "Aurora", genres: ["electronic"], baseStats: { stamina: 54, skill: 74, composure: 50, tempo: 66 }, learnset: { 1: ["sync_pulse"], 8: ["wobble_bass"], 16: ["drop"] }, recruitDifficulty: 0.85 },
 };
 
 export const SPECIES_LIST = Object.values(SPECIES);

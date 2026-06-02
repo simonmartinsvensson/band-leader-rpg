@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 4,
-  "nextobjectid": 4,
+  "nextobjectid": 5,
   "tilesets": [
     {
       "firstgid": 1,
@@ -222,6 +222,24 @@
               "name": "entry",
               "type": "string",
               "value": "from_town"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "name": "backstage_zone",
+          "type": "encounter",
+          "x": 32,
+          "y": 16,
+          "width": 80,
+          "height": 64,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "zone",
+              "type": "string",
+              "value": "blue_note_backstage"
             }
           ]
         }

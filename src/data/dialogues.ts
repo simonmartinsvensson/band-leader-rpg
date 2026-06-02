@@ -68,7 +68,11 @@ export const DIALOGUES: Record<string, Dialogue> = {
   },
   vip_host: {
     speaker: "VIP Host",
-    pages: ["You made it backstage!", "Word of your residency is spreading fast."],
+    pages: [
+      "You made it backstage at The Blue Note! Word of your residency is spreading fast.",
+      "They say if you linger back here, you can still catch Cass's old sound in the room.",
+      "A few leaders have even coaxed it into the band. Keep your ears open, {name}.",
+    ],
   },
   rival_after: {
     speaker: "Rival Max",

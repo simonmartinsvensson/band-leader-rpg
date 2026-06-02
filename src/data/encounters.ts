@@ -45,7 +45,7 @@ export const ENCOUNTER_ZONES: Record<string, EncounterZone> = {
     minLevel: 9,
     maxLevel: 13,
     musicians: ["rifflet", "amplifret", "garageling", "moshling"],
-    rare: ["voltaxe", "distortia", "rifflord", "crowdsurf"],
+    rare: ["voltaxe", "distortia", "rifflord", "crowdsurf", "riffraffe"],
   },
   folk_route: {
     rate: 0.4,
@@ -61,14 +61,35 @@ export const ENCOUNTER_ZONES: Record<string, EncounterZone> = {
     minLevel: 13,
     maxLevel: 17,
     musicians: ["grooveling", "funkadel", "fusionaut", "slapdash", "groovile"],
-    rare: ["distortia", "dubwave", "bassquatch", "discola", "crowdsurf"],
+    rare: ["distortia", "dubwave", "bassquatch", "discola", "crowdsurf", "bassolossus"],
   },
   classical_route: {
     rate: 0.4,
     minLevel: 13,
     maxLevel: 17,
     musicians: ["maestrel", "sonatina", "orchestron", "etudel"],
-    rare: ["cadenza", "nocturne", "concerta", "choralis", "maestoso"],
+    rare: ["cadenza", "nocturne", "concerta", "choralis", "maestoso", "maestrissimo"],
+  },
+  // --- Signature zones in story-gated reward areas ---
+  // Backstage at The Blue Note (jazz-residency reward): the old scene's echoes,
+  // and a rare chance at Cassette - a fragment of Cass's lost sound.
+  blue_note_backstage: {
+    rate: 0.35,
+    minLevel: 10,
+    maxLevel: 14,
+    musicians: ["crooner", "balladeer", "nocturne"],
+    rare: ["cassette"],
+    rareChance: 0.25,
+  },
+  // Warehouse after-hours (electronic-residency reward): Aurora, Monocorp's
+  // pristine machine sound, recruitable by the one who tore the company down.
+  warehouse_afterhours: {
+    rate: 0.35,
+    minLevel: 14,
+    maxLevel: 18,
+    musicians: ["synthling", "synthrax", "glitchard"],
+    rare: ["aurora"],
+    rareChance: 0.25,
   },
 };
 

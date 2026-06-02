@@ -43,6 +43,16 @@ describe("data integrity", () => {
     expect(SPECIES_LIST.length).toBeGreaterThanOrEqual(6);
   });
 
+  it("has a full roster (~40-60 species) covering every genre", () => {
+    expect(SPECIES_LIST.length).toBeGreaterThanOrEqual(40);
+    expect(SPECIES_LIST.length).toBeLessThanOrEqual(80);
+    // Every genre has at least a handful of species available.
+    for (const g of GENRE_LIST) {
+      const count = SPECIES_LIST.filter((s) => s.genres.includes(g)).length;
+      expect(count, `species in genre ${g}`).toBeGreaterThanOrEqual(4);
+    }
+  });
+
   it("every technique has a valid genre", () => {
     for (const t of TECHNIQUE_LIST) expect(GENRE_LIST).toContain(t.genre);
   });

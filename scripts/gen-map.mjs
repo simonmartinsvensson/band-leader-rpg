@@ -354,6 +354,8 @@ mkdirSync(OUT_DIR, { recursive: true });
       props: { dialogue: "vip_host", facing: "down", wander: false, tint: "#f1c40f" },
     }),
     obj({ name: "to_club", type: "warp", tx: 1, ty: 1, props: { target: "jazz_club", entry: "from_town" } }),
+    // Signature encounter zone: the old scene's echoes (rare: Cassette).
+    obj({ name: "backstage_zone", type: "encounter", tx: 2, ty: 1, tw: 5, th: 4, props: { zone: "blue_note_backstage" } }),
   ];
 
   const map = makeMap(W, H, [
@@ -504,6 +506,8 @@ mkdirSync(OUT_DIR, { recursive: true });
       props: { dialogue: "backstage_host", facing: "down", wander: false, tint: "#f1c40f" },
     }),
     obj({ name: "to_warehouse", type: "warp", tx: 1, ty: 1, props: { target: "warehouse", entry: "from_backstage" } }),
+    // Signature encounter zone: warehouse after-hours (rare: Aurora).
+    obj({ name: "afterhours_zone", type: "encounter", tx: 2, ty: 1, tw: 5, th: 4, props: { zone: "warehouse_afterhours" } }),
   ];
 
   const map = makeMap(W, H, [
