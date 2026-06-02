@@ -155,6 +155,9 @@ genre-district maps (`<genre>_route` + `<genre>_hub` for rock/folk/funk/classica
     `zone` (id into `src/data/encounters.ts`). Drawn as a translucent overlay.
   - **`heal`** — a rehearsal-studio heal point. Blocks movement (face it to use); interacting
     restores the whole party's stamina. Drawn with a "+" marker.
+  - **`lore`** — a collectible note/record/poster (prop `lore` = an id in `src/data/lore.ts`).
+    Face + interact to read it; the first read sets its `lore.*` flag and adds it to the Lore log
+    (see Side content). Blocks its tile like `heal`.
 
 Maps: `town`, `street` (busking encounters), `studio` (heal point), `park` (a higher-level
 `park_path` encounter zone, east of town, leading to the second venue). The studio is also where
@@ -412,10 +415,11 @@ The "gym/badge" progression, reskinned as winning over music venues.
 - **Residencies** (`src/data/residencies.ts`) — the badge equivalent, tracked in the registry
   (`"residencies"`): `jazz`, `electronic`, `rock`, `folk`, `funk`, `classical`, each granted by its
   venue headliner.
-- **Unlock (gated)** — a map object of type **`gate`** (props `requires`, `target`, `entry`) is a
-  bouncer that blocks movement; interacting warps you through only if you hold the required
-  residency, otherwise it turns you away. The jazz residency unlocks the VIP lounge behind the jazz
-  club; the electronic (warehouse) residency unlocks the backstage behind the warehouse.
+- **Unlock (gated)** — a map object of type **`gate`** (`target`, `entry` + one of: `requires` =
+  residency id, `requiresFlag` = story flag, or `requiresItem` = bag item) is a bouncer that blocks
+  movement; interacting warps you through only if the condition is met, otherwise it turns you away.
+  The jazz residency unlocks the VIP lounge; the electronic residency unlocks the backstage; see
+  Side content for the optional areas (a residency gate and an item gate) in the busking street.
 - **Career menu** (`CareerScene`, overlay, key **`C`**) — shows residencies earned and rivals beaten.
 - **Logic** (`src/systems/career.ts`, pure + tested) — `isTrainerDefeated`/`markTrainerDefeated`,
   `hasResidency`/`addResidency`, `buildTrainerTeam`, and `lineOfSight`.
@@ -527,8 +531,21 @@ flags). Each beat chains on the previous one's flag, so the arcs stay ordered no
   line). They pre-empt the NPC's base dialogue and are mutually exclusive so order is irrelevant.
 
 `tests/story-arc.test.ts` guards all of this: full map-reference integrity (every
-warp/gate/dialogue/trainer/zone resolves), event well-formedness, the rival + Vy arc gating
-sequences, reactive-line resolution, and trainer escalation invariants.
+warp/gate/dialogue/trainer/zone/lore resolves), event well-formedness, the rival + Vy arc gating
+sequences, sidequest + reactive-line resolution, and trainer escalation invariants.
+
+**Side content & curiosity hooks** (all data-driven on the same systems):
+
+- **Collectible lore** (`src/data/lore.ts`, pure `src/systems/lore.ts`) — notes/records/posters
+  about Cass and the old scene, placed as `lore` map objects in out-of-the-way corners across the
+  world. Reading one sets a `lore.*` flag; the **Lore log** (`LoreScene`, pause menu "Lore" or
+  overworld key `L`) tracks found-vs-`???` with an X/N count.
+- **Sidequests** — small NPC stories via chained interact events (give → condition → reward), e.g.
+  "The Lost Record" (completion gates on a lore collectible), "Prove It" (a one-shot battle), and
+  "Mixtape Delivery" (downtown → the folk hub). Rewards via `giveItem`/`giveCurrency`.
+- **Optional areas** — visible-but-locked from the start in the busking street: **The Cellar**
+  (folk-residency gate) and **The Loft** (item gate — a Backstage Pass from the Fixer NPC). Each is
+  a small bonus map with a hidden encounter zone (rare: Undertone / Skyline) + a lore scrap.
 
 Pure logic is unit-tested in `tests/story.test.ts` (flags/gating/progression, `interpolate`, + a
 full cutscene run through `runCutscene` with mock handlers); the save round-trip incl. `playerName`
