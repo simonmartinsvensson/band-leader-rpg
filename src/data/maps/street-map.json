@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 4,
-  "nextobjectid": 7,
+  "nextobjectid": 12,
   "tilesets": [
     {
       "firstgid": 1,
@@ -797,6 +797,117 @@
               "value": "#7cc4ff"
             }
           ]
+        },
+        {
+          "id": 7,
+          "name": "to_cellar",
+          "type": "gate",
+          "x": 288,
+          "y": 32,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "requires",
+              "type": "string",
+              "value": "folk"
+            },
+            {
+              "name": "target",
+              "type": "string",
+              "value": "the_cellar"
+            },
+            {
+              "name": "entry",
+              "type": "string",
+              "value": "from_street"
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "name": "from_cellar",
+          "type": "entry",
+          "x": 272,
+          "y": 32,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true
+        },
+        {
+          "id": 9,
+          "name": "fixer",
+          "type": "npc",
+          "x": 288,
+          "y": 96,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "dialogue",
+              "type": "string",
+              "value": "pass_giver"
+            },
+            {
+              "name": "facing",
+              "type": "string",
+              "value": "left"
+            },
+            {
+              "name": "wander",
+              "type": "bool",
+              "value": false
+            },
+            {
+              "name": "tint",
+              "type": "string",
+              "value": "#9b59b6"
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "name": "to_loft",
+          "type": "gate",
+          "x": 288,
+          "y": 160,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true,
+          "properties": [
+            {
+              "name": "requiresItem",
+              "type": "string",
+              "value": "backstage_pass"
+            },
+            {
+              "name": "target",
+              "type": "string",
+              "value": "the_loft"
+            },
+            {
+              "name": "entry",
+              "type": "string",
+              "value": "from_street"
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "name": "from_loft",
+          "type": "entry",
+          "x": 272,
+          "y": 160,
+          "width": 16,
+          "height": 16,
+          "rotation": 0,
+          "visible": true
         }
       ]
     }

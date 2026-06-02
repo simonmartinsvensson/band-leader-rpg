@@ -88,6 +88,21 @@ export const LORE: LoreEntry[] = [
     ],
     flag: "lore.note_tower",
   },
+  // In the optional bonus areas.
+  {
+    id: "poster_cellar",
+    kind: "poster",
+    title: "Cellar wall, in marker",
+    pages: ["Scrawled on the cellar wall: a list of names, most crossed out.", 'Near the bottom: "CASS - still ours. They can\'t buy a basement."'],
+    flag: "lore.poster_cellar",
+  },
+  {
+    id: "note_loft",
+    kind: "note",
+    title: "A pinned setlist",
+    pages: ['Pinned in the rooftop loft: an old setlist in two hands.', '"V & C - opening night." Someone has written under it, recently: "we should have run."'],
+    flag: "lore.note_loft",
+  },
 ];
 
 export function getLore(id: string): LoreEntry | undefined {

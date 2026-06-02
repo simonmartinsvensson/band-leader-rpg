@@ -68,6 +68,11 @@ describe("items data", () => {
     expect(getItem("energy_drink")?.effect).toMatchObject({ kind: "restoreStamina" });
     expect(getItem("snack")?.usableInField).toBe(true);
     expect(getItem("hype_track")?.usableInField).toBe(false); // battle only
-    for (const item of Object.values(ITEMS)) expect(item.price).toBeGreaterThan(0);
+    // Buyable consumables cost something; key items (not usable anywhere) may be
+    // free (you're given them, not sold them).
+    for (const item of Object.values(ITEMS)) {
+      expect(item.price).toBeGreaterThanOrEqual(0);
+      if (item.usableInBattle || item.usableInField) expect(item.price, item.id).toBeGreaterThan(0);
+    }
   });
 });

@@ -91,6 +91,25 @@ export const ENCOUNTER_ZONES: Record<string, EncounterZone> = {
     rare: ["aurora"],
     rareChance: 0.25,
   },
+  // --- Optional bonus areas (gated by residency / a key item) ---
+  // The underground cellar (behind a folk-residency gate in the busking street).
+  cellar_sessions: {
+    rate: 0.4,
+    minLevel: 12,
+    maxLevel: 16,
+    musicians: ["balladeer", "grooveling", "bopling", "troubadyl"],
+    rare: ["undertone"],
+    rareChance: 0.3,
+  },
+  // The rooftop loft (behind a Backstage Pass item-gate).
+  loft_session: {
+    rate: 0.4,
+    minLevel: 14,
+    maxLevel: 18,
+    musicians: ["crooner", "nocturne", "etudel", "vibraphan"],
+    rare: ["skyline"],
+    rareChance: 0.3,
+  },
 };
 
 export function getEncounterZone(id: string): EncounterZone | undefined {

@@ -183,6 +183,11 @@ export const SPECIES: Record<string, MusicianSpecies> = {
   // Aurora — Monocorp's pristine machine sound, beautiful in spite of itself.
   // Found after hours in the warehouse backstage (electronic-residency reward).
   aurora: { id: "aurora", name: "Aurora", genres: ["electronic"], baseStats: { stamina: 54, skill: 74, composure: 50, tempo: 66 }, learnset: { 1: ["sync_pulse"], 8: ["wobble_bass"], 16: ["drop"] }, recruitDifficulty: 0.85 },
+  // Hidden in the optional bonus areas (see src/data/encounters.ts).
+  // Undertone — the raw, after-dark sound of the underground cellar.
+  undertone: { id: "undertone", name: "Undertone", genres: ["funk", "folk"], baseStats: { stamina: 62, skill: 60, composure: 56, tempo: 56 }, learnset: { 1: ["slap_bass"], 8: ["barn_burner"], 16: ["p_funk"] }, recruitDifficulty: 0.8 },
+  // Skyline — the polished, exclusive sound of the rooftop loft.
+  skyline: { id: "skyline", name: "Skyline", genres: ["jazz", "classical"], baseStats: { stamina: 58, skill: 66, composure: 64, tempo: 50 }, learnset: { 1: ["trading_fours"], 8: ["fugue"], 16: ["grand_finale"] }, recruitDifficulty: 0.85 },
 };
 
 export const SPECIES_LIST = Object.values(SPECIES);

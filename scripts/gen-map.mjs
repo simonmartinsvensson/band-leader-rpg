@@ -243,6 +243,15 @@ mkdirSync(OUT_DIR, { recursive: true });
     // Sidequest givers (downtown): the record collector + the mixtape kid.
     obj({ name: "sq_collector", type: "npc", tx: 8, ty: 3, props: { dialogue: "sq_collector", facing: "left", wander: false, tint: "#c9a227" } }),
     obj({ name: "sq_sender", type: "npc", tx: 8, ty: 11, props: { dialogue: "sq_sender", facing: "left", wander: false, tint: "#7cc4ff" } }),
+    // --- Optional bonus areas (visible-but-locked from the start) ---
+    // The underground Cellar: a residency gate (folk) you pass long before you
+    // can open it. The Fixer nearby slips you the loft's Backstage Pass, and the
+    // Loft door is item-gated by that pass.
+    obj({ name: "to_cellar", type: "gate", tx: 18, ty: 2, props: { requires: "folk", target: "the_cellar", entry: "from_street" } }),
+    obj({ name: "from_cellar", type: "entry", tx: 17, ty: 2 }),
+    obj({ name: "fixer", type: "npc", tx: 18, ty: 6, props: { dialogue: "pass_giver", facing: "left", wander: false, tint: "#9b59b6" } }),
+    obj({ name: "to_loft", type: "gate", tx: 18, ty: 10, props: { requiresItem: "backstage_pass", target: "the_loft", entry: "from_street" } }),
+    obj({ name: "from_loft", type: "entry", tx: 17, ty: 10 }),
   ];
 
   const map = makeMap(W, H, [
@@ -731,4 +740,59 @@ for (const d of DISTRICTS) buildDistrict(d);
   ]);
   writeFileSync(resolve(OUT_DIR, "monocorp-hq-map.json"), JSON.stringify(map, null, 2) + "\n");
   console.log(`Wrote monocorp-hq-map.json (monocorp_hq, ${W}x${H})`);
+}
+
+// =============================================================================
+// THE CELLAR — optional bonus area behind a folk-residency gate in the busking
+// street (visible-but-locked from the start). A hidden encounter zone (rare:
+// Undertone) + a lore scrap about the old scene.
+// =============================================================================
+{
+  nextObjectId = 1;
+  const W = 10;
+  const H = 8;
+  const ground = new Array(W * H).fill(PATH);
+  const collision = new Array(W * H).fill(0);
+  border(collision, W, H);
+  const objects = [
+    obj({ name: "from_street", type: "entry", tx: 5, ty: 6 }),
+    obj({ name: "to_street", type: "warp", tx: 1, ty: 6, props: { target: "street", entry: "from_cellar" } }),
+    obj({ name: "cellar_host", type: "npc", tx: 5, ty: 2, props: { dialogue: "cellar_host", facing: "down", wander: false, tint: "#27ae60" } }),
+    obj({ name: "poster_cellar", type: "lore", tx: 8, ty: 2, props: { lore: "poster_cellar" } }),
+    obj({ name: "cellar_zone", type: "encounter", tx: 2, ty: 1, tw: 6, th: 5, props: { zone: "cellar_sessions" } }),
+  ];
+  const map = makeMap(W, H, [
+    tileLayer(1, "ground", W, H, ground),
+    tileLayer(2, "collision", W, H, collision),
+    { id: 3, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
+  ]);
+  writeFileSync(resolve(OUT_DIR, "the-cellar-map.json"), JSON.stringify(map, null, 2) + "\n");
+  console.log(`Wrote the-cellar-map.json (the_cellar, ${W}x${H})`);
+}
+
+// =============================================================================
+// THE LOFT — optional bonus area behind an item-gate (Backstage Pass) in the
+// busking street. A hidden encounter zone (rare: Skyline) + a lore scrap.
+// =============================================================================
+{
+  nextObjectId = 1;
+  const W = 10;
+  const H = 8;
+  const ground = new Array(W * H).fill(PATH);
+  const collision = new Array(W * H).fill(0);
+  border(collision, W, H);
+  const objects = [
+    obj({ name: "from_street", type: "entry", tx: 5, ty: 6 }),
+    obj({ name: "to_street", type: "warp", tx: 1, ty: 6, props: { target: "street", entry: "from_loft" } }),
+    obj({ name: "loft_host", type: "npc", tx: 5, ty: 2, props: { dialogue: "loft_host", facing: "down", wander: false, tint: "#f1c40f" } }),
+    obj({ name: "note_loft", type: "lore", tx: 8, ty: 2, props: { lore: "note_loft" } }),
+    obj({ name: "loft_zone", type: "encounter", tx: 2, ty: 1, tw: 6, th: 5, props: { zone: "loft_session" } }),
+  ];
+  const map = makeMap(W, H, [
+    tileLayer(1, "ground", W, H, ground),
+    tileLayer(2, "collision", W, H, collision),
+    { id: 3, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
+  ]);
+  writeFileSync(resolve(OUT_DIR, "the-loft-map.json"), JSON.stringify(map, null, 2) + "\n");
+  console.log(`Wrote the-loft-map.json (the_loft, ${W}x${H})`);
 }

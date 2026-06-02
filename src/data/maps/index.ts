@@ -17,6 +17,8 @@ import funkHub from "./funk-hub-map.json";
 import classicalRoute from "./classical-route-map.json";
 import classicalHub from "./classical-hub-map.json";
 import monocorpHq from "./monocorp-hq-map.json";
+import theCellar from "./the-cellar-map.json";
+import theLoft from "./the-loft-map.json";
 
 export const MapKeys = {
   TOWN: "town",
@@ -38,6 +40,9 @@ export const MapKeys = {
   CLASSICAL_HUB: "classical_hub",
   // Finale.
   MONOCORP_HQ: "monocorp_hq",
+  // Optional bonus areas.
+  THE_CELLAR: "the_cellar",
+  THE_LOFT: "the_loft",
 } as const;
 
 export const MAPS: Record<string, object> = {
@@ -58,6 +63,8 @@ export const MAPS: Record<string, object> = {
   [MapKeys.CLASSICAL_ROUTE]: classicalRoute,
   [MapKeys.CLASSICAL_HUB]: classicalHub,
   [MapKeys.MONOCORP_HQ]: monocorpHq,
+  [MapKeys.THE_CELLAR]: theCellar,
+  [MapKeys.THE_LOFT]: theLoft,
 };
 
 export function getMapData(key: string): object | undefined {

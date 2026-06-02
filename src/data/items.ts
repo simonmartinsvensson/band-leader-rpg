@@ -57,6 +57,17 @@ export const ITEMS: Record<string, Item> = {
     usableInField: false,
     effect: { kind: "boostStat", stat: "skill", stages: 1 },
   },
+  // Key item: opens the rooftop loft's item-gated door (never consumed, never
+  // "used" - usable flags are false, so it just sits in the bag as a key).
+  backstage_pass: {
+    id: "backstage_pass",
+    name: "Backstage Pass",
+    description: "Laminated, well-worn. Gets you into places that don't advertise.",
+    price: 0,
+    usableInBattle: false,
+    usableInField: false,
+    effect: { kind: "recruit", modifier: 1 },
+  },
 };
 
 export const ITEM_LIST = Object.values(ITEMS);

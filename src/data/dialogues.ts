@@ -150,6 +150,24 @@ export const DIALOGUES: Record<string, Dialogue> = {
     speaker: "Riverside Friend",
     pages: ["Oh - hello there. Lovely day for it by the water, isn't it?"],
   },
+  // --- Optional bonus areas ---
+  // A fixer who slips you the loft's backstage pass (once).
+  pass_giver: {
+    speaker: "The Fixer",
+    pages: [
+      "You've got the look of someone who plays the real rooms. Here.",
+      "A Backstage Pass. The rooftop loft uptown - show it at the door. Tell 'em nothing.",
+    ],
+    gift: { items: [{ id: "backstage_pass", qty: 1 }], once: "fixer_pass" },
+  },
+  cellar_host: {
+    speaker: "Cellar Regular",
+    pages: ["Welcome down to the Cellar, {name}. Monocorp doesn't know this room exists.", "Keep it that way. Some of the old sound still lives down here."],
+  },
+  loft_host: {
+    speaker: "Loft Host",
+    pages: ["The rooftop. Best ears in the city play up here, away from the cameras.", "Stay as long as you like. The skyline's always in tune."],
+  },
   // Monocorp Tower (the finale location).
   tower_guard: {
     speaker: "Tower Lobby",
