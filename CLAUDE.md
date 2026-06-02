@@ -730,8 +730,12 @@ A small audio layer; the game references sounds only by key (`AudioKeys`), never
 - **SFX** — menu moves + confirm/cancel across the menus (Title/Pause/Battle/Party/Bag/Shop/
   Career), plus technique hits, faint, level-up, and recruit-success in battle.
 - **Mute/volume** — the **Audio** row in the pause menu: Confirm toggles mute, Left/Right step the
-  volume; both persist immediately. (WebAudio only starts after the first input gesture, per
-  browser autoplay policy, so the title may be briefly silent until a key is pressed.)
+  volume; both persist immediately. A global **`M`** hotkey (registered in `main.ts`, so it works in
+  *every* scene including the title — before any game is started) toggles mute too; it's skipped
+  while `NameEntryScene` is active (that screen types letters into the player's name). The title
+  screen shows the `M: mute`/`M: unmute` hint reflecting the current state. (WebAudio only starts
+  after the first input gesture, per browser autoplay policy, so the title may be briefly silent
+  until a key is pressed.)
 - **Polish** — camera **fades** on warps (fade out → restart → fade in) and battle start/end; a
   brief **battle intro** (the battlers slide in); and on each hit a **white flash + shake +
   floating damage number** with the hit SFX. Faints drop + fade the sprite.

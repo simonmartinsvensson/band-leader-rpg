@@ -146,7 +146,8 @@ export class TitleScene extends Phaser.Scene {
     });
     const sel = this.optionTexts[this.index];
     this.cursor.setVisible(true).setPosition(sel.x - sel.width / 2 - 8, sel.y - 4);
-    this.prompt.setText("Up/Down  Space: select");
+    const mute = audio.getSettings().muted ? "M: unmute" : "M: mute";
+    this.prompt.setText(`Space: select   ${mute}`);
   }
 
   private pressed(action: keyof TitleScene["keys"]): boolean {

@@ -61,6 +61,15 @@ const game = new Phaser.Game(config);
 // persists across scenes and one mute/volume setting governs everything.
 audio.init(game.sound as unknown as Parameters<typeof audio.init>[0]);
 
+// Global mute hotkey (M) — works in every scene, including the title, so the
+// player can silence the music immediately without starting a game. Skipped
+// while the name-entry grid is up, since that screen types letters into a name.
+window.addEventListener("keydown", (e) => {
+  if (e.repeat || e.key.toLowerCase() !== "m") return;
+  if (game.scene.isActive("NameEntryScene")) return;
+  audio.toggleMute();
+});
+
 // On-screen controls for touch devices (dispatch the same keys the keyboard uses).
 initTouchControls();
 
