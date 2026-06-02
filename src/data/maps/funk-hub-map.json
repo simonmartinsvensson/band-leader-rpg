@@ -541,8 +541,8 @@
         },
         {
           "id": 4,
-          "name": "funk_sign",
-          "type": "npc",
+          "name": "funk_headliner",
+          "type": "trainer",
           "x": 192,
           "y": 96,
           "width": 16,
@@ -551,9 +551,9 @@
           "visible": true,
           "properties": [
             {
-              "name": "dialogue",
+              "name": "trainer",
               "type": "string",
-              "value": "funk_venue_sign"
+              "value": "funk_headliner"
             },
             {
               "name": "facing",
@@ -561,14 +561,9 @@
               "value": "down"
             },
             {
-              "name": "wander",
-              "type": "bool",
-              "value": false
-            },
-            {
               "name": "tint",
               "type": "string",
-              "value": "#9aa0b5"
+              "value": "#e67e22"
             }
           ]
         },

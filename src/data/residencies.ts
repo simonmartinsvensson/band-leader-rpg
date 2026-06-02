@@ -13,6 +13,8 @@ export const RESIDENCIES: Record<string, Residency> = {
   electronic: { id: "electronic", name: "Warehouse Residency", venue: "The Warehouse" },
   rock: { id: "rock", name: "Amp Residency", venue: "The Amp" },
   folk: { id: "folk", name: "Landing Residency", venue: "The Landing" },
+  funk: { id: "funk", name: "Pocket Residency", venue: "The Pocket" },
+  classical: { id: "classical", name: "Conservatory Residency", venue: "The Conservatory" },
 };
 
 export function getResidency(id: string): Residency | undefined {

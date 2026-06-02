@@ -127,6 +127,41 @@ export const TRAINERS: Record<string, Trainer> = {
     residency: "folk",
     storyFlag: "story.folk_won",
   },
+  // Funk Block — The Pocket. The Fusionaut ace (jazz/funk) shrugs off the usual
+  // rock counter, so this is a real level + team check.
+  funk_headliner: {
+    id: "funk_headliner",
+    name: "Headliner Lowdown",
+    team: [
+      { species: "funkadel", level: 16 },
+      { species: "grooveling", level: 17 },
+      { species: "fusionaut", level: 19 },
+    ],
+    reward: 2600,
+    intro: ["You found the Pocket. Most folks walk right past the groove.", "Monocorp can program a beat. They can't program FEEL. Show me yours."],
+    defeatLine: ["Mmm. You sit right in the pocket, don't you.", "That's the feel they keep trying to erase. Don't lose it."],
+    postLine: ["The Pocket keeps time for you now."],
+    sightRange: 0,
+    residency: "funk",
+    storyFlag: "story.funk_won",
+  },
+  // Classical Hall — The Conservatory. The top district venue before the Tower.
+  classical_headliner: {
+    id: "classical_headliner",
+    name: "Headliner Allegra",
+    team: [
+      { species: "sonatina", level: 18 },
+      { species: "maestrel", level: 19 },
+      { species: "orchestron", level: 21 },
+    ],
+    reward: 2800,
+    intro: ["The Conservatory has stood longer than any label.", "Monocorp calls our craft obsolete. Prove there is still mastery left in this city."],
+    defeatLine: ["Flawless. The old disciplines live on in you.", "You are ready for the Tower now. They will not expect what you have become."],
+    postLine: ["The Conservatory salutes you, maestro."],
+    sightRange: 0,
+    residency: "classical",
+    storyFlag: "story.classical_won",
+  },
 };
 
 export function getTrainer(id: string): Trainer | undefined {

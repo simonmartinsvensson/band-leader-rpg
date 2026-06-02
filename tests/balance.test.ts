@@ -234,4 +234,39 @@ describe("balance: district venues (the circuit)", () => {
     expect(winRate(noCounter, "folk_headliner")).toBeLessThan(0.5);
     expect(winRate(countered, "folk_headliner")).toBeGreaterThanOrEqual(0.7);
   });
+
+  // The Pocket (funk). A higher-tier venue (opens after the warehouse). The
+  // Fusionaut ace resists the usual rock counter, so it's a steeper level check.
+  it("Funk / The Pocket: a deeper level check (later-tier venue)", () => {
+    const under = [
+      createInstance(SPECIES.rifflet, 13),
+      createInstance(SPECIES.crooner, 13),
+      createInstance(SPECIES.balladeer, 13),
+    ];
+    const ready = [
+      createInstance(SPECIES.rifflet, 18),
+      createInstance(SPECIES.crooner, 18),
+      createInstance(SPECIES.sonatina, 18), // classical -> 2x into funk
+    ];
+    console.log(`funk: under ${(winRate(under, "funk_headliner") * 100).toFixed(0)}%  ready ${(winRate(ready, "funk_headliner") * 100).toFixed(0)}%`);
+    expect(winRate(under, "funk_headliner")).toBeLessThan(0.6);
+    expect(winRate(ready, "funk_headliner")).toBeGreaterThanOrEqual(0.7);
+  });
+
+  // The Conservatory (classical). The top district venue before the Tower.
+  it("Classical / The Conservatory: the toughest district venue", () => {
+    const under = [
+      createInstance(SPECIES.rifflet, 15),
+      createInstance(SPECIES.crooner, 15),
+      createInstance(SPECIES.balladeer, 15),
+    ];
+    const ready = [
+      createInstance(SPECIES.rifflet, 20),
+      createInstance(SPECIES.crooner, 20),
+      createInstance(SPECIES.balladeer, 20),
+    ];
+    console.log(`classical: under ${(winRate(under, "classical_headliner") * 100).toFixed(0)}%  ready ${(winRate(ready, "classical_headliner") * 100).toFixed(0)}%`);
+    expect(winRate(under, "classical_headliner")).toBeLessThan(0.6);
+    expect(winRate(ready, "classical_headliner")).toBeGreaterThanOrEqual(0.7);
+  });
 });
