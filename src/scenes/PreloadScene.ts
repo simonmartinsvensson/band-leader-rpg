@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT } from "../data/constants";
-import { SPRITESHEETS, IMAGES, FRAME_CONFIG, AUDIO } from "../data/assets";
+import { SPRITESHEETS, IMAGES, FRAME_CONFIG, AUDIO, CHARACTER_SHEETS, CHARACTER_FRAME } from "../data/assets";
 import { createText } from "../ui/text";
 
 /**
@@ -21,6 +21,10 @@ export class PreloadScene extends Phaser.Scene {
 
     for (const sheet of SPRITESHEETS) {
       this.load.spritesheet(sheet.key, sheet.path, FRAME_CONFIG);
+    }
+    // LimeZu overworld characters use a taller 16x32 frame.
+    for (const sheet of CHARACTER_SHEETS) {
+      this.load.spritesheet(sheet.key, sheet.path, CHARACTER_FRAME);
     }
     for (const img of IMAGES) {
       this.load.image(img.key, img.path);

@@ -1,6 +1,7 @@
 import type Phaser from "phaser";
 import { TILE_SIZE } from "../data/constants";
 import { AssetKeys } from "../data/assets";
+import { idleFrameIndex, walkAnimKey } from "../ui/characterAnims";
 import { DIRECTION_VECTORS, ALL_DIRECTIONS, type Direction } from "../types/direction";
 
 /** Tile-step duration for a wandering NPC (a touch slower than the player). */
@@ -19,8 +20,12 @@ export interface NPCConfig {
   facing: Direction;
   /** If true, the NPC randomly steps to free neighbouring tiles. */
   wander: boolean;
-  /** Optional sprite tint, to tell NPCs apart while art is placeholder. */
-  tint?: number;
+  /**
+   * Character spritesheet key (a LimeZu `char_*` texture; see
+   * src/data/characters.ts). Distinct characters replace the old per-NPC tint.
+   * Falls back to the placeholder NPC image when omitted (e.g. in unit tests).
+   */
+  character?: string;
 }
 
 /** Returns true if the given tile may be entered (free of walls/other actors). */
@@ -41,6 +46,7 @@ export class NPC {
   private readonly sprite: Phaser.GameObjects.Sprite;
   private readonly wander: boolean;
   private readonly isWalkable: WalkableQuery;
+  private readonly textureKey: string;
 
   private gridX: number;
   private gridY: number;
@@ -57,13 +63,16 @@ export class NPC {
     this.facing = config.facing;
     this.wander = config.wander;
     this.isWalkable = isWalkable;
+    this.textureKey = config.character ?? AssetKeys.NPC;
     this.nextWanderAt = WANDER_MIN + Math.random() * WANDER_SPREAD;
 
+    // 16x32 LimeZu character, anchored by its feet at the bottom of its tile
+    // (the body overhangs the tile above), like the player.
     this.sprite = scene.add
-      .sprite(this.pixelAt(this.gridX), this.pixelAt(this.gridY), AssetKeys.NPC)
-      .setOrigin(0.5)
+      .sprite(centerX(this.gridX), footY(this.gridY), this.textureKey, idleFrameIndex(this.facing))
+      .setOrigin(0.5, 1)
       .setDepth(5);
-    if (config.tint !== undefined) this.sprite.setTint(config.tint);
+    this.showIdle();
   }
 
   get tileX(): number {
@@ -95,6 +104,7 @@ export class NPC {
   /** Turn to face a direction without moving (e.g. toward the player). */
   faceTo(direction: Direction): void {
     this.facing = direction;
+    this.showIdle();
   }
 
   /**
@@ -132,18 +142,44 @@ export class NPC {
     this.gridX = targetX;
     this.gridY = targetY;
     this.moving = true;
+    this.playWalk();
     this.scene.tweens.add({
       targets: this.sprite,
-      x: this.pixelAt(targetX),
-      y: this.pixelAt(targetY),
+      x: centerX(targetX),
+      y: footY(targetY),
       duration: NPC_STEP_DURATION,
       onComplete: () => {
         this.moving = false;
+        this.showIdle();
       },
     });
   }
 
-  private pixelAt(tile: number): number {
-    return tile * TILE_SIZE + TILE_SIZE / 2;
+  /** Play the facing direction's walk cycle (no-op if already playing it). */
+  private playWalk(): void {
+    const s = this.sprite as unknown as { play?: (key: string, ignoreIfPlaying?: boolean) => unknown };
+    s.play?.(walkAnimKey(this.textureKey, this.facing), true);
   }
+
+  /** Stop any walk anim and show the facing direction's idle frame. Defensive so
+   *  a minimal stub sprite (unit tests) works without a texture/anim system. */
+  private showIdle(): void {
+    const s = this.sprite as unknown as {
+      anims?: { stop?: () => void };
+      setFrame?: (frame: number) => unknown;
+      texture?: { frameTotal: number };
+    };
+    s.anims?.stop?.();
+    if (s.setFrame && (s.texture?.frameTotal ?? 0) > 1) s.setFrame(idleFrameIndex(this.facing));
+  }
+}
+
+/** Center pixel (x) of a tile column. */
+function centerX(tile: number): number {
+  return tile * TILE_SIZE + TILE_SIZE / 2;
+}
+
+/** Bottom pixel (y) of a tile row — the foot anchor for a 16x32 character. */
+function footY(tile: number): number {
+  return tile * TILE_SIZE + TILE_SIZE;
 }

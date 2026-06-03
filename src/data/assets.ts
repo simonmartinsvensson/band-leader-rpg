@@ -20,6 +20,31 @@ export const PlayerFrame = {
   RIGHT: 3,
 } as const;
 
+/**
+ * Overworld character spritesheets — real art from LimeZu's "Modern Interiors
+ * (free)" pack, repacked by `scripts/repack-characters.py` (`npm run
+ * gen:characters`). Each frame is 16x32 (a character is one tile wide, two tall:
+ * it stands on its bottom 16x16 tile, head overhanging the tile above), laid out
+ * 7 cols x 4 rows — see `CHARACTER_FRAME` + `src/ui/characterAnims.ts` for the
+ * idle/walk frame layout. The `player`/`npc` placeholder keys below are kept only
+ * for the battle musician sprites (still placeholders — next job).
+ */
+export const CharacterKeys = {
+  ADAM: "char_adam",
+  ALEX: "char_alex",
+  AMELIA: "char_amelia",
+  BOB: "char_bob",
+} as const;
+
+/** Frame size of the LimeZu overworld characters (taller than a tile). */
+export const CHARACTER_FRAME = { frameWidth: 16, frameHeight: 32 } as const;
+
+/** Character spritesheets to load (16x32 frames). */
+export const CHARACTER_SHEETS = Object.values(CharacterKeys).map((key) => ({
+  key,
+  path: `assets/${key}.png`,
+})) as ReadonlyArray<{ key: string; path: string }>;
+
 /** Tileset frame indices in tileset.png (16x16 each). */
 export const TileFrame = {
   GRASS: 0,
