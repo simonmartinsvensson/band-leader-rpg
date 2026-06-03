@@ -1,4 +1,5 @@
 import { TILE_SIZE } from "./constants";
+import { SPECIES_LIST } from "./species";
 
 // Single source of truth for asset keys + load metadata. PreloadScene loads
 // these; the rest of the game references content by key. See CLAUDE.md.
@@ -61,6 +62,22 @@ export const SPRITESHEETS = [
 
 /** Single-image assets to load: key -> file. */
 export const IMAGES = [{ key: AssetKeys.NPC, path: "assets/npc.png" }] as const;
+
+/**
+ * Per-species battle sprites: one 32x32 PNG per musician species, generated
+ * procedurally from species + genre data by `scripts/gen-battlers.mjs` (`npm run
+ * gen:battlers`). The key is `battler_<speciesId>`; BattleScene looks it up via
+ * `battlerKey(speciesId)`. Derived from SPECIES_LIST so it can never drift from
+ * the roster. To swap in real art, drop a same-named 32x32 PNG into
+ * public/assets — nothing else changes (see CLAUDE.md "Asset-swap guide").
+ */
+export const battlerKey = (speciesId: string): string => `battler_${speciesId}`;
+
+/** Battler images to load: one per species. */
+export const BATTLERS = SPECIES_LIST.map((s) => ({
+  key: battlerKey(s.id),
+  path: `assets/${battlerKey(s.id)}.png`,
+})) as ReadonlyArray<{ key: string; path: string }>;
 
 /**
  * The bitmap-font atlas. Loaded separately (and first) in BootScene rather than

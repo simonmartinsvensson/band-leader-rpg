@@ -1,7 +1,6 @@
 import Phaser from "phaser";
 import { GAME_WIDTH } from "../data/constants";
-import { AssetKeys, AudioKeys } from "../data/assets";
-import { GENRES } from "../data/genres";
+import { AssetKeys, AudioKeys, battlerKey } from "../data/assets";
 import { audio } from "../systems/audio";
 import { createText } from "../ui/text";
 import {
@@ -183,24 +182,30 @@ export class BattleScene extends Phaser.Scene {
 
   // --- Layout ----------------------------------------------------------------
 
+  /** The battle sprite key for a species, falling back to the NPC placeholder. */
+  private battlerTexture(speciesId: string): string {
+    const key = battlerKey(speciesId);
+    return this.textures.exists(key) ? key : AssetKeys.NPC;
+  }
+
   private buildArena(): void {
     const platforms = this.add.graphics();
     platforms.fillStyle(0x3a4a63, 1);
-    platforms.fillEllipse(186, 70, 64, 18);
-    platforms.fillEllipse(58, 116, 70, 20);
+    platforms.fillEllipse(186, 72, 64, 18);
+    platforms.fillEllipse(58, 112, 70, 20);
 
     const opp = this.battle.opponent;
     const me = this.battle.player;
+    // Per-species battle sprites (full-color art — no genre tint). Drawn at 2x
+    // (32x32 source -> 64px tall) and standing on their platforms (origin 0.5,1).
     const oppSprite = this.add
-      .sprite(186, 56, AssetKeys.NPC)
+      .sprite(186, 70, this.battlerTexture(opp.instance.speciesId))
       .setOrigin(0.5, 1)
-      .setScale(3)
-      .setTint(genreColor(opp.genres[0]));
+      .setScale(2);
     const playerSprite = this.add
-      .sprite(58, 104, AssetKeys.PLAYER, 0)
+      .sprite(58, 108, this.battlerTexture(me.instance.speciesId))
       .setOrigin(0.5, 1)
-      .setScale(3)
-      .setTint(genreColor(me.genres[0]));
+      .setScale(2);
     this.sprites = { opponent: oppSprite, player: playerSprite };
 
     // Info boxes (name + Lv) — opponent top-left, player bottom-right.
@@ -449,7 +454,7 @@ export class BattleScene extends Phaser.Scene {
     this.battle.player = makeBattler(inst);
     this.battle.outcome = "ongoing";
     this.participants.add(inst);
-    this.sprites.player.setAlpha(1).setY(104).setTint(genreColor(this.battle.player.genres[0]));
+    this.sprites.player.setAlpha(1).setY(108).setTexture(this.battlerTexture(inst.speciesId)).clearTint();
     this.playerName.setText(`${inst.nickname}  Lv${inst.level}`);
     this.refreshHp("player");
     this.lastHp.player = inst.currentStamina;
@@ -649,7 +654,7 @@ export class BattleScene extends Phaser.Scene {
     const next = this.opponents[this.opponentIndex];
     this.battle.opponent = makeBattler(next);
     this.battle.outcome = "ongoing";
-    this.sprites.opponent.setAlpha(1).setY(56).setTint(genreColor(this.battle.opponent.genres[0]));
+    this.sprites.opponent.setAlpha(1).setY(70).setTexture(this.battlerTexture(next.speciesId)).clearTint();
     this.opponentName.setText(`${next.nickname}  Lv${next.level}`);
     this.refreshHp("opponent");
     this.lastHp.opponent = next.currentStamina;
@@ -823,7 +828,7 @@ export class BattleScene extends Phaser.Scene {
   private hitFlash(side: Side): void {
     const s = this.sprites[side];
     s.setTintFill(0xffffff);
-    this.time.delayedCall(70, () => s.setTint(genreColor(this.battle[side].genres[0])));
+    this.time.delayedCall(70, () => s.clearTint());
     this.tweens.add({ targets: s, x: s.x - 4, duration: 45, yoyo: true, repeat: 2 });
   }
 
@@ -853,10 +858,6 @@ export class BattleScene extends Phaser.Scene {
   private pressed(action: keyof BattleScene["keys"]): boolean {
     return this.keys[action].some((key) => Phaser.Input.Keyboard.JustDown(key));
   }
-}
-
-function genreColor(genre: string | undefined): number {
-  return genre && genre in GENRES ? GENRES[genre as keyof typeof GENRES].color : 0xffffff;
 }
 
 function techName(id: string): string {
