@@ -1,14 +1,14 @@
 import Phaser from "phaser";
 import { TILE_SIZE } from "../data/constants";
-import { AssetKeys } from "../data/assets";
+import { TILESET_TEXTURES } from "../data/assets";
 import type { WorldGrid } from "../types/grid";
 
 /** Layer / object naming conventions for maps (see CLAUDE.md). */
 const GROUND_LAYER = "ground";
+/** Optional, non-blocking visual layer (rugs, furniture) drawn over the ground. */
+const DECOR_LAYER = "decor";
 const COLLISION_LAYER = "collision";
 const OBJECTS_LAYER = "objects";
-/** Tileset name inside the Tiled JSON; linked to the loaded tileset texture. */
-const TILESET_NAME = "placeholder";
 
 /**
  * Loads and renders a Tiled JSON map and exposes the grid info the Player needs.
@@ -38,13 +38,25 @@ export class GameMap implements WorldGrid {
     this.widthInPixels = this.map.widthInPixels;
     this.heightInPixels = this.map.heightInPixels;
 
-    const tileset = this.map.addTilesetImage(TILESET_NAME, AssetKeys.TILES, TILE_SIZE, TILE_SIZE);
-    if (!tileset) {
-      throw new Error(`Map '${key}': tileset '${TILESET_NAME}' could not be linked to a texture`);
-    }
+    // Link every tileset the map declares to its loaded texture by name (see
+    // TILESET_TEXTURES): outdoor maps use `placeholder`, interiors use `interior`.
+    const tilesets = this.map.tilesets.map((ts) => {
+      const texture = TILESET_TEXTURES[ts.name];
+      if (!texture) {
+        throw new Error(`Map '${key}': no texture registered for tileset '${ts.name}'`);
+      }
+      const linked = this.map.addTilesetImage(ts.name, texture, TILE_SIZE, TILE_SIZE);
+      if (!linked) {
+        throw new Error(`Map '${key}': tileset '${ts.name}' could not be linked to a texture`);
+      }
+      return linked;
+    });
 
-    this.map.createLayer(GROUND_LAYER, tileset, 0, 0);
-    const collisionLayer = this.map.createLayer(COLLISION_LAYER, tileset, 0, 0);
+    this.map.createLayer(GROUND_LAYER, tilesets, 0, 0);
+    // Optional decor layer (rugs/furniture); purely visual, never blocks. Missing
+    // on most maps -> createLayer returns null, which we ignore.
+    this.map.createLayer(DECOR_LAYER, tilesets, 0, 0);
+    const collisionLayer = this.map.createLayer(COLLISION_LAYER, tilesets, 0, 0);
 
     // Build a flat blocked-tile lookup from the collision layer: any cell that
     // holds a tile (index !== -1) is impassable.

@@ -135,12 +135,19 @@ genre-district maps (`<genre>_route` + `<genre>_hub` for rock/folk/funk/classica
 
 **Format & conventions** (orthogonal, 16×16; everything keys off names):
 
-- **Tileset** — one embedded tileset named **`placeholder`**, linked at load to the loaded
-  `tiles` texture. GIDs (firstgid = 1, in `tileset.png` order): `1` grass, `2` path, `3` wall,
-  `4` water. (GID `0` = empty.)
+- **Tileset** — a map embeds one tileset, linked at load to a loaded texture **by name** via
+  `TILESET_TEXTURES` (`src/data/assets.ts`); `GameMap` binds whatever the map declares. **Outdoor**
+  maps use **`placeholder`** → the `tiles` texture: GIDs (firstgid = 1, in `tileset.png` order)
+  `1` grass, `2` path, `3` wall, `4` water. **Interior** maps (see "Interior maps" below) use
+  **`interior`** → the real-art `tiles_interior` texture: GIDs follow `InteriorTile` (`assets.ts`),
+  e.g. `1` wood floor … `7` wood wall … `12` rug … `18` fireplace. (GID `0` = empty in both.)
 - **`ground`** (tile layer) — visual base; never blocks.
+- **`decor`** (tile layer, **optional**) — extra visual tiles (rugs, stage spotlights) drawn over
+  the ground; **never blocks**. Used by interior maps; absent on most maps (`createLayer` returns
+  null, ignored).
 - **`collision`** (tile layer) — rendered *and* logical: **any non-empty cell blocks movement**.
-  Put walls/water here so they're both visible and solid. (Empty cells = passable.)
+  Put walls/water here so they're both visible and solid. (Empty cells = passable.) Interiors put
+  wall-mounted furniture (shelves/plants/art) here too — it's a non-empty tile, so it still blocks.
 - **`objects`** (object layer) — spawns, actors, warps, zones. `GameMap.getSpawn(name)` returns
   the tile coords of a named object; `GameMap.getObjects()` returns all objects with tile coords,
   tile size (`tileW`/`tileH`, for region rectangles), and flattened custom `properties`. The
@@ -166,9 +173,19 @@ the player lands after losing a battle. (Venue maps — `jazz_club`/`vip_lounge`
 `warehouse`/`backstage` — are covered under Venues, trainers & residencies; the genre districts
 under World map below.)
 
-Layer names, the tileset name (`placeholder`), `player_start`, and the object types above are the
-contract — keep them consistent across maps. New tile *types* are added by extending the tileset
-image + GID map, not by special-casing logic.
+Layer names, the tileset names (`placeholder` / `interior`), `player_start`, and the object types
+above are the contract — keep them consistent across maps. New tile *types* are added by extending
+the relevant tileset image + GID map, not by special-casing logic.
+
+**Interior maps** — the indoor maps render with the **real LimeZu interior tileset** (`interior` →
+`tiles_interior`) instead of the placeholder one, so rooms read as real venues/rooms (themed
+floors + walls, plus rugs/shelves/plants/spotlights as decor). They are: `studio`, `jazz_club`,
+`vip_lounge`, `warehouse`, `backstage`, `the_cellar`, `the_loft`, and `monocorp_hq`. All other maps
+(`town`, `street`, `park`, and every district `<genre>_route`/`<genre>_hub`) stay **outdoor** on the
+placeholder tileset. The interior tileset PNG is sliced from the LimeZu pack by
+`scripts/gen-tiles-interior.py` (`npm run gen:tiles-interior`); `gen-map.mjs` authors interiors with
+`makeInteriorMap` + the `IT` GID constants (mirroring `InteriorTile`). Retexturing only changed
+which tiles render — collision footprints, layouts, warps, and object positions are unchanged.
 
 ## World map (districts)
 
@@ -607,10 +624,11 @@ input rewrites:
 ## Asset keys
 
 Assets live in `public/assets`. Overworld characters are **real art** (LimeZu, repacked into
-`char_*.png`); battle musician sprites are **procedurally generated per species** (`battler_*.png`);
-tiles, the `player`/`npc` placeholders (now unused at runtime), and the bitmap font are still
-generated placeholders. Loader keys and frame indices are defined once in `src/data/assets.ts` —
-always reference assets by these keys, never by raw path.
+`char_*.png`); interior maps use **real LimeZu tiles** (`tileset_interior.png`); battle musician
+sprites are **procedurally generated per species** (`battler_*.png`); the outdoor `tiles`, the
+`player`/`npc` placeholders (now unused at runtime), and the bitmap font are still generated
+placeholders. Loader keys and frame indices are defined once in `src/data/assets.ts` — always
+reference assets by these keys, never by raw path.
 
 | Key          | File                   | Type        | Notes                                                   |
 | ------------ | ---------------------- | ----------- | ------------------------------------------------------- |
@@ -621,7 +639,8 @@ always reference assets by these keys, never by raw path.
 | `battler_<id>`| `assets/battler_<id>.png`| image    | **Battle sprite per musician species** — one 32×32 frame each (`battlerKey(id)`, `BATTLERS`); see Battler sprites below |
 | `player`     | `assets/player.png`    | spritesheet | Legacy placeholder (kept as the battler fallback), 16×16 |
 | `npc`        | `assets/npc.png`       | image       | Legacy placeholder (kept as the battler fallback), 16×16 |
-| `tiles`      | `assets/tileset.png`   | spritesheet | `0` grass, `1` path, `2` wall, `3` water (`TileFrame`)  |
+| `tiles`      | `assets/tileset.png`   | spritesheet | Outdoor tiles: `0` grass, `1` path, `2` wall, `3` water (`TileFrame`) |
+| `tiles_interior`| `assets/tileset_interior.png`| spritesheet | **Interior tiles** — real LimeZu floors/walls/decor, 16×16 frames (`InteriorTile`); linked to interior maps via `TILESET_TEXTURES`. See Interior tileset below |
 | `font`       | `assets/font.png`      | image       | bitmap-font atlas; loaded in BootScene, see Text below  |
 
 **Overworld characters are real art** (LimeZu Modern Interiors, free): the player and every NPC
@@ -631,6 +650,16 @@ render from a `char_*` spritesheet (`CharacterKeys` in `assets.ts`), repacked by
 runtime (`BattleScene` uses per-species battlers — see below) but are kept as a safety fallback.
 Asset URLs are resolved against Vite's `BASE_URL` (`this.load.setBaseURL(import.meta.env.BASE_URL)`)
 so loading works both in dev and from the GitHub Pages subpath.
+
+**Interior tiles are real LimeZu art** (`tileset_interior.png`): a curated 8-column atlas of 16×16
+tiles sliced from LimeZu "Modern Interiors (free)" by `scripts/gen-tiles-interior.py` (`npm run
+gen:tiles-interior`) from the gitignored raw pack under `assets-src/limezu/Interiors_free/` (same
+**non-commercial** license + don't-commit-the-raw-pack rule as the characters). The slice order IS
+the GID contract (GID = atlas index + 1), mirrored in `InteriorTile` (`assets.ts`) and the `IT`
+constants in `gen-map.mjs`: floors (wood/brick/concrete/cream/teal/marble), walls
+(wood/blue/tan/peach/mint), and decor (rug/spotlight/plant/shelf/sofa/art/fire). Only the **interior
+maps** load it (via `TILESET_TEXTURES`); outdoor maps keep the placeholder `tiles`. Swap in different
+art by keeping the same atlas slots (same index → same meaning) and re-running the script.
 
 **Battler sprites are procedural per-species art** (`battler_<speciesId>.png`, one 32×32 image
 each): generated by `scripts/gen-battlers.mjs` (`npm run gen:battlers`) straight from the real
@@ -661,9 +690,9 @@ once in `src/data/assets.ts`, and nothing in `src/` ever hardcodes an asset path
   loaded first, in `BootScene`, via `FONT_IMAGE.key`/`.path`); audio from `AUDIO`. All four live
   in `assets.ts`.
 - Everything else references assets only by the `AssetKeys` / `AudioKeys` constants and the frame
-  enums (`PlayerFrame`, `TileFrame`). (Audit: the only literal asset path anywhere is in the four
-  arrays in `assets.ts` and the `assets/...` strings inside the `scripts/gen-*.mjs` generators,
-  which write the placeholders — not runtime code.)
+  enums (`PlayerFrame`, `TileFrame`, `InteriorTile`). (Audit: the only literal asset path anywhere
+  is in the four arrays in `assets.ts` and the `assets/...` strings inside the `scripts/gen-*`
+  generators, which write the placeholders/derived art — not runtime code.)
 - Paths are resolved against Vite's `BASE_URL`, so swaps work in dev and on the Pages subpath.
 
 To swap an asset you can either **(a)** overwrite the file in `public/assets/` keeping its exact
@@ -676,6 +705,7 @@ a new file. Prefer (a). After swapping art, run `npm run smoke` to confirm textu
 | ---------- | --------------------- | ----------- | ---------- | --------------- | ----------------------------------------- |
 | `font`     | `assets/font.png`     | image       | **96×48**  | PNG RGBA, white glyphs on transparent | RetroFont atlas: 6×8 px cells, ASCII 32–126 row-major, 16 cells/row (6 rows). Glyphs drawn white so they can be tinted. Metrics are mirrored in `src/ui/font.ts` — change one, change both. |
 | `tiles`    | `assets/tileset.png`  | spritesheet | **64×16**  | PNG RGBA        | 4 frames of 16×16 in one strip, **in order**: `0` grass, `1` path, `2` wall, `3` water (`TileFrame`). Maps reference these by GID (firstgid 1 → grass). Add tile *types* by widening the strip + extending `TileFrame` and the GID map in `scripts/gen-map.mjs`, not by reordering. |
+| `tiles_interior` | `assets/tileset_interior.png` | spritesheet | **128×48** | PNG RGBA, transparent | **Interior tiles.** 18 tiles of 16×16 in an 8-col grid (rows of 8,8,2), **in `InteriorTile` order**: floors 0–5, walls 6–10, decor 11–17 (GID = index+1). Only interior maps load it. Sliced from the LimeZu pack by `scripts/gen-tiles-interior.py`; the order is the contract (mirrored in `InteriorTile` + the `IT` constants in `gen-map.mjs`). Swap by keeping the same slots + re-running the script. |
 | `char_*`   | `assets/char_<name>.png` | spritesheet | **112×128** | PNG RGBA, transparent | Overworld character. **16×32 frames** (1 tile wide, 2 tall — stands on its bottom 16×16 tile, head overhangs the tile above), laid out **7 cols × 4 rows**: row = direction (down, up, left, right); column 0 = idle frame, columns 1–6 = the 6-frame walk cycle. Phaser frame = `row*7 + col`. Layout mirrored in `src/ui/characterAnims.ts` + `scripts/repack-characters.py`. |
 | `battler_<id>` | `assets/battler_<id>.png` | image | **32×32** | PNG RGBA, transparent | **Battle sprite, one per species.** Single 32×32 frame; the musician figure stands on the bottom edge (drawn at origin 0.5,1 so its feet sit on the platform). Full-color (drawn at 2× = 64px, **not** tinted). Procedural — `scripts/gen-battlers.mjs`. To swap in real art, keep this exact size + the `battler_<speciesId>` name. |
 | `player`   | `assets/player.png`   | spritesheet | **64×16**  | PNG RGBA        | Legacy placeholder; no longer drawn at runtime (battler fallback only). 4 frames of 16×16: `0` down, `1` up, `2` left, `3` right (`PlayerFrame`). |
@@ -697,6 +727,13 @@ Notes on visual swaps:
   everyone else a stable hash over the four). With only four free characters, crowd NPCs **reuse**
   the four sprites — add more by registering new `char_*` keys + assigning them. The old per-NPC
   `tint` trick is gone.
+- **Interior tiles (`tiles_interior`) are real LimeZu art**, sliced from the pack's
+  `Interiors_free/16x16/` sheets (Room Builder = floors + wall panels, Interiors = furniture) by
+  `scripts/gen-tiles-interior.py` (`npm run gen:tiles-interior`). The raw pack lives under
+  `assets-src/limezu/Interiors_free/` (**gitignored — never committed**); only the derived
+  `public/assets/tileset_interior.png` is committed. The 8-col / `InteriorTile`-ordered output is the
+  contract — to retheme, change which source cells the script's `TILES` list points at (keeping slot
+  meanings) and re-run; the maps + `IT` GID constants need no change.
 - **Tiles/font frame size is 16×16** (`FRAME_CONFIG` = `TILE_SIZE`); **characters are 16×32**
   (`CHARACTER_FRAME`). Keep `pixelArt`/nearest-neighbour art (no anti-aliasing) so it stays crisp.
 - **Musicians (battle) have per-species procedural sprites.** `BattleScene` renders each battler
@@ -711,15 +748,15 @@ Notes on visual swaps:
 
 ### Sourcing real third-party art
 
-Overworld characters now use **LimeZu — Modern Interiors (free version)**
+Overworld characters **and the interior tiles** now use **LimeZu — Modern Interiors (free version)**
 (<https://limezu.itch.io/moderninteriors>). **License: non-commercial only** — the free pack may be
 used *and edited* in non-commercial projects but **not** in commercial ones, and the raw sprites may
-not be redistributed/resold. So the raw pack is gitignored and only the repacked PNGs the game loads
-are committed; **keep this project non-commercial** while it ships LimeZu art (credited on the
-WinScene + in `CREDITS.md`). For other art, the tileset/font placeholders still need bespoke layouts:
-recomposite a CC0 pack (**Kenney.nl**, **OpenGameArt** CC0/CC-BY, **itch.io** free packs — check each
-license) to the exact strips/order above. The project font is **original CC0 art** authored here
-(see header of `scripts/gen-font.mjs`).
+not be redistributed/resold. So the raw pack is gitignored and only the repacked/derived PNGs the
+game loads are committed; **keep this project non-commercial** while it ships LimeZu art (credited on
+the WinScene + in `CREDITS.md`). For other art, the outdoor `tiles`/font placeholders still need
+bespoke layouts: recomposite a CC0 pack (**Kenney.nl**, **OpenGameArt** CC0/CC-BY, **itch.io** free
+packs — check each license) to the exact strips/order above. The project font is **original CC0 art**
+authored here (see header of `scripts/gen-font.mjs`).
 
 ### Audio assets
 
@@ -823,6 +860,9 @@ or drop it too.)
   (procedural, from `SPECIES_LIST` + `GENRES`; see Asset keys → Battler sprites).
 - `npm run gen:characters` — repack the LimeZu overworld character sheets (`assets-src/limezu/`,
   gitignored) into `public/assets/char_*.png` (Python + Pillow; see `scripts/repack-characters.py`).
+- `npm run gen:tiles-interior` — slice the LimeZu interior tiles (`assets-src/limezu/Interiors_free/`,
+  gitignored) into `public/assets/tileset_interior.png` (Python + Pillow; see
+  `scripts/gen-tiles-interior.py`). Used by the interior maps.
 - `npm run smoke` — headless Playwright check (boot, walk, collision, camera, NPC dialogue).
   Needs a server running first; defaults to the dev server (`npm run dev`), override `SMOKE_URL`.
 

@@ -8,7 +8,10 @@ import { SPECIES_LIST } from "./species";
 export const AssetKeys = {
   PLAYER: "player",
   NPC: "npc",
+  /** Outdoor (placeholder) tileset — grass/path/wall/water (see TileFrame). */
   TILES: "tiles",
+  /** Interior tileset — real LimeZu floors/walls/decor (see InteriorTile). */
+  TILES_INTERIOR: "tiles_interior",
   /** Bitmap-font atlas image. Loaded early in BootScene (see src/ui/font.ts). */
   FONT: "font",
 } as const;
@@ -54,10 +57,54 @@ export const TileFrame = {
   WATER: 3,
 } as const;
 
+/**
+ * Interior tileset frame indices in tileset_interior.png (16x16 each), generated
+ * by `scripts/gen-tiles-interior.py` (`npm run gen:tiles-interior`) from the
+ * LimeZu interior pack. Used by the INTERIOR maps (venues, the studio, the VIP
+ * lounge, backstage, the Cellar/Loft, the Tower lobby) to retexture floors/walls
+ * with real art; outdoor maps stay on `tiles` above. The map GID a layer
+ * references is `index + 1` (firstgid = 1). This order is the contract — it is
+ * mirrored in `scripts/gen-tiles-interior.py` and `scripts/gen-map.mjs` (the `IT`
+ * GID constants). Change one, change all three.
+ */
+export const InteriorTile = {
+  FLOOR_WOOD: 0,
+  FLOOR_BRICK: 1,
+  FLOOR_CONCRETE: 2,
+  FLOOR_CREAM: 3,
+  FLOOR_TEAL: 4,
+  FLOOR_MARBLE: 5,
+  WALL_WOOD: 6,
+  WALL_BLUE: 7,
+  WALL_TAN: 8,
+  WALL_PEACH: 9,
+  WALL_MINT: 10,
+  RUG: 11,
+  SPOTLIGHT: 12,
+  PLANT: 13,
+  SHELF: 14,
+  SOFA: 15,
+  ART: 16,
+  FIRE: 17,
+} as const;
+
+/**
+ * Maps a Tiled tileset's embedded `name` to the loaded texture key it links to.
+ * `GameMap` uses this to bind every tileset a map declares, so a map can pick its
+ * look by naming the tileset: outdoor maps embed `placeholder` (-> `tiles`),
+ * interior maps embed `interior` (-> `tiles_interior`). Add a tileset by adding a
+ * texture key here + loading it in SPRITESHEETS.
+ */
+export const TILESET_TEXTURES: Record<string, string> = {
+  placeholder: AssetKeys.TILES,
+  interior: AssetKeys.TILES_INTERIOR,
+};
+
 /** Spritesheets to load: key -> file + frame size. */
 export const SPRITESHEETS = [
   { key: AssetKeys.PLAYER, path: "assets/player.png" },
   { key: AssetKeys.TILES, path: "assets/tileset.png" },
+  { key: AssetKeys.TILES_INTERIOR, path: "assets/tileset_interior.png" },
 ] as const;
 
 /** Single-image assets to load: key -> file. */
