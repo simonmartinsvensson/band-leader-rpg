@@ -14,6 +14,7 @@
     "gen:audio": "node scripts/gen-audio.mjs",
     "gen:battlers": "node scripts/gen-battlers.mjs",
     "gen:characters": "python3 scripts/repack-characters.py",
+    "gen:tiles-interior": "python3 scripts/gen-tiles-interior.py",
     "test": "vitest run",
     "check:data": "vitest run tests/datamodel.test.ts --disable-console-intercept",
     "smoke": "node scripts/smoke.mjs"

@@ -15,6 +15,32 @@ const PATH = 2;
 const WALL = 3;
 const WATER = 4;
 
+// Interior tileset GIDs (firstgid = 1). INTERIOR maps (venues, studio, VIP
+// lounge, backstage, Cellar, Loft, Tower lobby) use the real LimeZu `interior`
+// tileset instead of the placeholder one; outdoor maps keep GRASS/PATH/WALL/WATER
+// above. This order MUST match `InteriorTile` in src/data/assets.ts and the slice
+// order in scripts/gen-tiles-interior.py (GID = atlas index + 1).
+const IT = {
+  FLOOR_WOOD: 1,
+  FLOOR_BRICK: 2,
+  FLOOR_CONCRETE: 3,
+  FLOOR_CREAM: 4,
+  FLOOR_TEAL: 5,
+  FLOOR_MARBLE: 6,
+  WALL_WOOD: 7,
+  WALL_BLUE: 8,
+  WALL_TAN: 9,
+  WALL_PEACH: 10,
+  WALL_MINT: 11,
+  RUG: 12,
+  SPOTLIGHT: 13,
+  PLANT: 14,
+  SHELF: 15,
+  SOFA: 16,
+  ART: 17,
+  FIRE: 18,
+};
+
 // --- Tiled JSON assembly helpers ---------------------------------------------
 const tileLayer = (id, name, W, H, data) => ({
   id,
@@ -52,7 +78,36 @@ const obj = ({ name, type, tx, ty, tw = 1, th = 1, props }) => {
   return o;
 };
 
-function makeMap(W, H, layers) {
+// The two tileset declarations a map can embed. `GameMap` links each by name to
+// a loaded texture (see TILESET_TEXTURES in src/data/assets.ts).
+const PLACEHOLDER_TILESET = {
+  firstgid: 1,
+  name: "placeholder",
+  image: "tileset.png",
+  imagewidth: 64,
+  imageheight: 16,
+  tilewidth: TILE,
+  tileheight: TILE,
+  tilecount: 4,
+  columns: 4,
+  margin: 0,
+  spacing: 0,
+};
+const INTERIOR_TILESET = {
+  firstgid: 1,
+  name: "interior",
+  image: "tileset_interior.png",
+  imagewidth: 128,
+  imageheight: 48,
+  tilewidth: TILE,
+  tileheight: TILE,
+  tilecount: 24,
+  columns: 8,
+  margin: 0,
+  spacing: 0,
+};
+
+function makeMap(W, H, layers, tilesets = [PLACEHOLDER_TILESET]) {
   return {
     type: "map",
     version: "1.10",
@@ -66,23 +121,27 @@ function makeMap(W, H, layers) {
     tileheight: TILE,
     nextlayerid: layers.length + 1,
     nextobjectid: nextObjectId,
-    tilesets: [
-      {
-        firstgid: 1,
-        name: "placeholder",
-        image: "tileset.png",
-        imagewidth: 64,
-        imageheight: 16,
-        tilewidth: TILE,
-        tileheight: TILE,
-        tilecount: 4,
-        columns: 4,
-        margin: 0,
-        spacing: 0,
-      },
-    ],
+    tilesets,
     layers,
   };
+}
+
+/** An INTERIOR map: same shell, but bound to the real LimeZu `interior` tileset. */
+function makeInteriorMap(W, H, layers) {
+  return makeMap(W, H, layers, [INTERIOR_TILESET]);
+}
+
+/** Fill the 1-tile border of a collision array with a given wall GID. */
+function interiorBorder(collision, W, H, wall) {
+  const idx = (x, y) => y * W + x;
+  for (let x = 0; x < W; x++) {
+    collision[idx(x, 0)] = wall;
+    collision[idx(x, H - 1)] = wall;
+  }
+  for (let y = 0; y < H; y++) {
+    collision[idx(0, y)] = wall;
+    collision[idx(W - 1, y)] = wall;
+  }
 }
 
 function border(collision, W, H) {
@@ -273,12 +332,18 @@ mkdirSync(OUT_DIR, { recursive: true });
   const H = 10;
   const idx = (x, y) => y * W + x;
 
-  const ground = new Array(W * H).fill(GRASS);
-  // A path "floor" down the middle leading to the stage.
-  for (let y = 2; y < H - 1; y++) ground[idx(7, y)] = PATH;
+  const ground = new Array(W * H).fill(IT.FLOOR_WOOD); // warm wood-floor rehearsal room
+  const decor = new Array(W * H).fill(0);
+  // A rug runner up the middle to the stage, with a spotlight on the stage itself.
+  for (let y = 4; y < H - 1; y++) decor[idx(7, y)] = IT.RUG;
+  decor[idx(7, 3)] = IT.SPOTLIGHT;
 
   const collision = new Array(W * H).fill(0);
-  border(collision, W, H);
+  interiorBorder(collision, W, H, IT.WALL_WOOD);
+  // Gear against the back wall (still blocks, like any wall tile).
+  collision[idx(4, 0)] = IT.SHELF;
+  collision[idx(5, 0)] = IT.SHELF;
+  collision[idx(10, 0)] = IT.PLANT;
 
   const objects = [
     obj({ name: "studio_entry", type: "entry", tx: 7, ty: 6 }),
@@ -287,10 +352,11 @@ mkdirSync(OUT_DIR, { recursive: true });
     obj({ name: "note_studio", type: "lore", tx: 11, ty: 7, props: { lore: "note_studio" } }),
   ];
 
-  const map = makeMap(W, H, [
+  const map = makeInteriorMap(W, H, [
     tileLayer(1, "ground", W, H, ground),
-    tileLayer(2, "collision", W, H, collision),
-    { id: 3, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
+    tileLayer(2, "decor", W, H, decor),
+    tileLayer(3, "collision", W, H, collision),
+    { id: 4, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
   ]);
   writeFileSync(resolve(OUT_DIR, "studio-map.json"), JSON.stringify(map, null, 2) + "\n");
   console.log(`Wrote studio-map.json (studio, ${W}x${H})`);
@@ -306,14 +372,23 @@ mkdirSync(OUT_DIR, { recursive: true });
   const H = 12;
   const idx = (x, y) => y * W + x;
 
-  const ground = new Array(W * H).fill(GRASS);
-  for (let x = 4; x <= 11; x++) ground[idx(x, 3)] = PATH; // the stage
-  ground[idx(7, 2)] = WATER; // blue "notes"
-  ground[idx(8, 2)] = WATER;
-  for (let y = 4; y < H - 1; y++) ground[idx(8, y)] = PATH; // aisle to the stage
+  const ground = new Array(W * H).fill(IT.FLOOR_WOOD); // warm club floor
+  for (let x = 4; x <= 11; x++) ground[idx(x, 3)] = IT.FLOOR_BRICK; // the raised stage
+  ground[idx(7, 2)] = IT.FLOOR_BRICK; // stage back
+  ground[idx(8, 2)] = IT.FLOOR_BRICK;
+
+  const decor = new Array(W * H).fill(0);
+  for (let y = 5; y < H - 1; y++) decor[idx(8, y)] = IT.RUG; // aisle runner to the stage
+  decor[idx(7, 2)] = IT.SPOTLIGHT; // stage spotlights ("blue notes")
+  decor[idx(8, 2)] = IT.SPOTLIGHT;
+  decor[idx(8, 4)] = IT.SPOTLIGHT; // on the headliner
 
   const collision = new Array(W * H).fill(0);
-  border(collision, W, H);
+  interiorBorder(collision, W, H, IT.WALL_WOOD);
+  collision[idx(1, 0)] = IT.SHELF; // bar shelves along the back wall
+  collision[idx(2, 0)] = IT.SHELF;
+  collision[idx(13, 0)] = IT.ART;
+  collision[idx(14, 0)] = IT.PLANT;
 
   const objects = [
     obj({ name: "from_town", type: "entry", tx: 8, ty: 10 }),
@@ -336,10 +411,11 @@ mkdirSync(OUT_DIR, { recursive: true });
     obj({ name: "to_town", type: "warp", tx: 14, ty: 10, props: { target: "town", entry: "from_jazz" } }),
   ];
 
-  const map = makeMap(W, H, [
+  const map = makeInteriorMap(W, H, [
     tileLayer(1, "ground", W, H, ground),
-    tileLayer(2, "collision", W, H, collision),
-    { id: 3, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
+    tileLayer(2, "decor", W, H, decor),
+    tileLayer(3, "collision", W, H, collision),
+    { id: 4, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
   ]);
   writeFileSync(resolve(OUT_DIR, "jazz-club-map.json"), JSON.stringify(map, null, 2) + "\n");
   console.log(`Wrote jazz-club-map.json (jazz_club, ${W}x${H})`);
@@ -354,9 +430,16 @@ mkdirSync(OUT_DIR, { recursive: true });
   const H = 6;
   const idx = (x, y) => y * W + x;
 
-  const ground = new Array(W * H).fill(PATH);
+  const ground = new Array(W * H).fill(IT.FLOOR_CREAM); // plush lounge floor
+  const decor = new Array(W * H).fill(0);
+  decor[idx(3, 2)] = IT.RUG; // a rug in the middle of the lounge
+  decor[idx(4, 2)] = IT.RUG;
+
   const collision = new Array(W * H).fill(0);
-  border(collision, W, H);
+  interiorBorder(collision, W, H, IT.WALL_TAN);
+  collision[idx(1, 0)] = IT.SOFA; // plush seating + a plant along the back wall
+  collision[idx(2, 0)] = IT.SOFA;
+  collision[idx(6, 0)] = IT.PLANT;
 
   const objects = [
     obj({ name: "vip_entry", type: "entry", tx: 4, ty: 4 }),
@@ -373,10 +456,11 @@ mkdirSync(OUT_DIR, { recursive: true });
     obj({ name: "record_vip", type: "lore", tx: 6, ty: 4, props: { lore: "record_vip" } }),
   ];
 
-  const map = makeMap(W, H, [
+  const map = makeInteriorMap(W, H, [
     tileLayer(1, "ground", W, H, ground),
-    tileLayer(2, "collision", W, H, collision),
-    { id: 3, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
+    tileLayer(2, "decor", W, H, decor),
+    tileLayer(3, "collision", W, H, collision),
+    { id: 4, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
   ]);
   writeFileSync(resolve(OUT_DIR, "vip-lounge-map.json"), JSON.stringify(map, null, 2) + "\n");
   console.log(`Wrote vip-lounge-map.json (vip_lounge, ${W}x${H})`);
@@ -452,14 +536,18 @@ mkdirSync(OUT_DIR, { recursive: true });
   const H = 13;
   const idx = (x, y) => y * W + x;
 
-  const ground = new Array(W * H).fill(PATH); // a concrete dance floor
-  for (let x = 5; x <= 12; x++) ground[idx(x, 2)] = WATER; // neon strip behind the stage
+  const ground = new Array(W * H).fill(IT.FLOOR_CONCRETE); // a concrete dance floor
+
+  const decor = new Array(W * H).fill(0);
+  for (let x = 5; x <= 12; x++) decor[idx(x, 2)] = IT.SPOTLIGHT; // neon strip behind the stage
 
   const collision = new Array(W * H).fill(0);
-  border(collision, W, H);
+  interiorBorder(collision, W, H, IT.WALL_BLUE);
   // Speaker stacks flanking the stage (decor + solid), clear of the aisle.
-  collision[idx(4, 2)] = WALL;
-  collision[idx(13, 2)] = WALL;
+  collision[idx(4, 2)] = IT.WALL_BLUE;
+  collision[idx(13, 2)] = IT.WALL_BLUE;
+  collision[idx(1, 0)] = IT.ART; // a poster + a plant by the entrance wall
+  collision[idx(16, 0)] = IT.PLANT;
 
   const objects = [
     obj({ name: "from_park", type: "entry", tx: 9, ty: 11 }),
@@ -492,10 +580,11 @@ mkdirSync(OUT_DIR, { recursive: true });
     obj({ name: "to_park", type: "warp", tx: 16, ty: 11, props: { target: "park", entry: "from_warehouse" } }),
   ];
 
-  const map = makeMap(W, H, [
+  const map = makeInteriorMap(W, H, [
     tileLayer(1, "ground", W, H, ground),
-    tileLayer(2, "collision", W, H, collision),
-    { id: 3, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
+    tileLayer(2, "decor", W, H, decor),
+    tileLayer(3, "collision", W, H, collision),
+    { id: 4, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
   ]);
   writeFileSync(resolve(OUT_DIR, "warehouse-map.json"), JSON.stringify(map, null, 2) + "\n");
   console.log(`Wrote warehouse-map.json (warehouse, ${W}x${H})`);
@@ -510,9 +599,15 @@ mkdirSync(OUT_DIR, { recursive: true });
   const H = 6;
   const idx = (x, y) => y * W + x;
 
-  const ground = new Array(W * H).fill(PATH);
+  const ground = new Array(W * H).fill(IT.FLOOR_CREAM); // green-room floor
+  const decor = new Array(W * H).fill(0);
+  decor[idx(3, 2)] = IT.RUG;
+  decor[idx(4, 2)] = IT.RUG;
+
   const collision = new Array(W * H).fill(0);
-  border(collision, W, H);
+  interiorBorder(collision, W, H, IT.WALL_TAN);
+  collision[idx(1, 0)] = IT.PLANT;
+  collision[idx(6, 0)] = IT.ART;
 
   const objects = [
     obj({ name: "backstage_entry", type: "entry", tx: 4, ty: 4 }),
@@ -528,10 +623,11 @@ mkdirSync(OUT_DIR, { recursive: true });
     obj({ name: "afterhours_zone", type: "encounter", tx: 2, ty: 1, tw: 5, th: 4, props: { zone: "warehouse_afterhours" } }),
   ];
 
-  const map = makeMap(W, H, [
+  const map = makeInteriorMap(W, H, [
     tileLayer(1, "ground", W, H, ground),
-    tileLayer(2, "collision", W, H, collision),
-    { id: 3, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
+    tileLayer(2, "decor", W, H, decor),
+    tileLayer(3, "collision", W, H, collision),
+    { id: 4, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
   ]);
   writeFileSync(resolve(OUT_DIR, "backstage-map.json"), JSON.stringify(map, null, 2) + "\n");
   console.log(`Wrote backstage-map.json (backstage, ${W}x${H})`);
@@ -706,10 +802,15 @@ for (const d of DISTRICTS) buildDistrict(d);
   const W = 14;
   const H = 11;
   const at = (x, y) => y * W + x;
-  const ground = new Array(W * H).fill(PATH); // polished lobby floor
-  for (let x = 4; x <= 9; x++) ground[at(x, 2)] = WATER; // glassy backdrop behind the stage
+  const ground = new Array(W * H).fill(IT.FLOOR_MARBLE); // polished corporate lobby
+  const decor = new Array(W * H).fill(0);
+  for (let x = 4; x <= 9; x++) decor[at(x, 2)] = IT.SPOTLIGHT; // glassy lit backdrop
+  for (let y = 4; y <= 8; y++) decor[at(7, y)] = IT.RUG; // a cold runner to the Chairman
+
   const collision = new Array(W * H).fill(0);
-  border(collision, W, H);
+  interiorBorder(collision, W, H, IT.WALL_BLUE);
+  collision[at(1, 0)] = IT.ART;
+  collision[at(12, 0)] = IT.PLANT;
 
   const objects = [
     obj({ name: "from_town", type: "entry", tx: 7, ty: 9 }),
@@ -733,10 +834,11 @@ for (const d of DISTRICTS) buildDistrict(d);
     obj({ name: "note_tower", type: "lore", tx: 11, ty: 7, props: { lore: "note_tower" } }),
   ];
 
-  const map = makeMap(W, H, [
+  const map = makeInteriorMap(W, H, [
     tileLayer(1, "ground", W, H, ground),
-    tileLayer(2, "collision", W, H, collision),
-    { id: 3, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
+    tileLayer(2, "decor", W, H, decor),
+    tileLayer(3, "collision", W, H, collision),
+    { id: 4, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
   ]);
   writeFileSync(resolve(OUT_DIR, "monocorp-hq-map.json"), JSON.stringify(map, null, 2) + "\n");
   console.log(`Wrote monocorp-hq-map.json (monocorp_hq, ${W}x${H})`);
@@ -751,9 +853,15 @@ for (const d of DISTRICTS) buildDistrict(d);
   nextObjectId = 1;
   const W = 10;
   const H = 8;
-  const ground = new Array(W * H).fill(PATH);
+  const idx = (x, y) => y * W + x;
+  const ground = new Array(W * H).fill(IT.FLOOR_WOOD); // cozy basement floor
+  const decor = new Array(W * H).fill(0);
+  decor[idx(4, 4)] = IT.RUG; // a rug by the fire
+  decor[idx(5, 4)] = IT.RUG;
   const collision = new Array(W * H).fill(0);
-  border(collision, W, H);
+  interiorBorder(collision, W, H, IT.WALL_WOOD);
+  collision[idx(5, 0)] = IT.FIRE; // a fireplace + a plant on the back wall
+  collision[idx(1, 0)] = IT.PLANT;
   const objects = [
     obj({ name: "from_street", type: "entry", tx: 5, ty: 6 }),
     obj({ name: "to_street", type: "warp", tx: 1, ty: 6, props: { target: "street", entry: "from_cellar" } }),
@@ -761,10 +869,11 @@ for (const d of DISTRICTS) buildDistrict(d);
     obj({ name: "poster_cellar", type: "lore", tx: 8, ty: 2, props: { lore: "poster_cellar" } }),
     obj({ name: "cellar_zone", type: "encounter", tx: 2, ty: 1, tw: 6, th: 5, props: { zone: "cellar_sessions" } }),
   ];
-  const map = makeMap(W, H, [
+  const map = makeInteriorMap(W, H, [
     tileLayer(1, "ground", W, H, ground),
-    tileLayer(2, "collision", W, H, collision),
-    { id: 3, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
+    tileLayer(2, "decor", W, H, decor),
+    tileLayer(3, "collision", W, H, collision),
+    { id: 4, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
   ]);
   writeFileSync(resolve(OUT_DIR, "the-cellar-map.json"), JSON.stringify(map, null, 2) + "\n");
   console.log(`Wrote the-cellar-map.json (the_cellar, ${W}x${H})`);
@@ -778,9 +887,16 @@ for (const d of DISTRICTS) buildDistrict(d);
   nextObjectId = 1;
   const W = 10;
   const H = 8;
-  const ground = new Array(W * H).fill(PATH);
+  const idx = (x, y) => y * W + x;
+  const ground = new Array(W * H).fill(IT.FLOOR_CREAM); // airy loft floor
+  const decor = new Array(W * H).fill(0);
+  decor[idx(4, 4)] = IT.RUG;
+  decor[idx(5, 4)] = IT.RUG;
   const collision = new Array(W * H).fill(0);
-  border(collision, W, H);
+  interiorBorder(collision, W, H, IT.WALL_TAN);
+  collision[idx(1, 0)] = IT.SOFA; // seating, art + a plant along the back wall
+  collision[idx(5, 0)] = IT.ART;
+  collision[idx(8, 0)] = IT.PLANT;
   const objects = [
     obj({ name: "from_street", type: "entry", tx: 5, ty: 6 }),
     obj({ name: "to_street", type: "warp", tx: 1, ty: 6, props: { target: "street", entry: "from_loft" } }),
@@ -788,10 +904,11 @@ for (const d of DISTRICTS) buildDistrict(d);
     obj({ name: "note_loft", type: "lore", tx: 8, ty: 2, props: { lore: "note_loft" } }),
     obj({ name: "loft_zone", type: "encounter", tx: 2, ty: 1, tw: 6, th: 5, props: { zone: "loft_session" } }),
   ];
-  const map = makeMap(W, H, [
+  const map = makeInteriorMap(W, H, [
     tileLayer(1, "ground", W, H, ground),
-    tileLayer(2, "collision", W, H, collision),
-    { id: 3, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
+    tileLayer(2, "decor", W, H, decor),
+    tileLayer(3, "collision", W, H, collision),
+    { id: 4, name: "objects", type: "objectgroup", opacity: 1, visible: true, x: 0, y: 0, objects },
   ]);
   writeFileSync(resolve(OUT_DIR, "the-loft-map.json"), JSON.stringify(map, null, 2) + "\n");
   console.log(`Wrote the-loft-map.json (the_loft, ${W}x${H})`);
