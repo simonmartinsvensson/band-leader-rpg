@@ -8,8 +8,10 @@ Source (raw pack, gitignored, NOT redistributed — non-commercial license):
     assets-src/limezu/Interiors_free/16x16/Room_Builder_free_16x16.png  (floors + wall panels)
     assets-src/limezu/Interiors_free/16x16/Interiors_free_16x16.png      (furniture / decor)
 
-Output (served, committed — the only interior-tile file the game loads):
-    public/assets/tileset_interior.png
+Output (served, committed — the interior-tile files the game loads):
+    public/assets/tileset_interior.png  (the 16x16 floor/wall/decor atlas)
+    public/assets/door.png              (a single 16x32 door, drawn over warp tiles
+                                         in OverworldScene — see "Map transitions")
 
 The output is a curated 8-column atlas of hand-picked 16x16 tiles. The GID a map
 references is (atlas index + 1) — firstgid is 1 — so the index order below IS the
@@ -27,8 +29,17 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "assets-src", "limezu", "Interiors_free", "16x16")
 OUT = os.path.join(ROOT, "public", "assets", "tileset_interior.png")
+DOOR_OUT = os.path.join(ROOT, "public", "assets", "door.png")
 CELL = 16
 COLS = 8  # atlas width in tiles (matches src/data/assets.ts / gen-map.mjs)
+
+# The door is a single 16x32 sprite (one tile wide, two tall), taken from the
+# Interiors furniture sheet. It is NOT part of the tile atlas above (it isn't a
+# map-layer tile): OverworldScene draws it foot-anchored in the wall beside each
+# building/venue warp so the entrance reads as a real door. (col, row) in the
+# Interiors sheet of the door's top-left 16x16 cell; it spans that cell + the one
+# below it.
+DOOR = (IN_DOOR_COL, IN_DOOR_ROW) = (7, 8)
 
 # Curated tiles, in GID order (GID = index + 1). Each entry is
 # (source-atlas, column, row) in 16x16 tile units. RB = Room_Builder (floors +
@@ -78,6 +89,13 @@ def main():
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     out.save(OUT)
     print(f"Wrote {OUT} ({out.width}x{out.height}, {len(TILES)} tiles, {COLS} cols x {rows} rows)")
+
+    # The 16x32 door, sliced from the Interiors sheet (separate from the atlas).
+    in_sheet = sheets.get(IN) or Image.open(os.path.join(SRC, IN)).convert("RGBA")
+    dc, dr = DOOR
+    door = in_sheet.crop((dc * CELL, dr * CELL, dc * CELL + CELL, dr * CELL + 2 * CELL))
+    door.save(DOOR_OUT)
+    print(f"Wrote {DOOR_OUT} ({door.width}x{door.height} door sprite)")
 
 
 if __name__ == "__main__":
