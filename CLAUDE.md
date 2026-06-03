@@ -158,7 +158,14 @@ genre-district maps (`<genre>_route` + `<genre>_hub` for rock/folk/funk/classica
     `facing` (`up`/`down`/`left`/`right`), `wander` (bool). Its character sprite is chosen by
     `characterForNPC(name)` (see Asset keys); the legacy `tint` prop is no longer used.
   - **`warp`** — stepping onto this tile loads another map. Props: `target` (map key),
-    `entry` (entry-object name in the target map). Drawn as a yellow marker.
+    `entry` (entry-object name in the target map). Rendered by appearance, not as a marker
+    (`OverworldScene.buildObjects`): a warp that crosses the indoor/outdoor boundary — either
+    the current or target map is an interior (`isInteriorMap`, `src/data/maps/index.ts`) — is a
+    building **door**, drawn with the LimeZu `door` sprite (`AssetKeys.DOOR`, the 16×32
+    `public/assets/door.png`) foot-anchored on the warp tile so it sits against the wall
+    (`drawWarpDoor`); an outdoor↔outdoor warp is a **seamless** path continuation and draws
+    nothing, so the ground/road reads as carrying on. (Wall-adjacency can't classify them —
+    outdoor edge warps also abut the border wall — so interior involvement is the signal.)
   - **`encounter`** — a region rectangle; every tile it covers is an encounter zone. Prop:
     `zone` (id into `src/data/encounters.ts`). Drawn as a translucent overlay.
   - **`heal`** — a rehearsal-studio heal point. Blocks movement (face it to use); interacting
@@ -641,6 +648,7 @@ reference assets by these keys, never by raw path.
 | `npc`        | `assets/npc.png`       | image       | Legacy placeholder (kept as the battler fallback), 16×16 |
 | `tiles`      | `assets/tileset.png`   | spritesheet | Outdoor tiles: `0` grass, `1` path, `2` wall, `3` water (`TileFrame`) |
 | `tiles_interior`| `assets/tileset_interior.png`| spritesheet | **Interior tiles** — real LimeZu floors/walls/decor, 16×16 frames (`InteriorTile`); linked to interior maps via `TILESET_TEXTURES`. See Interior tileset below |
+| `door`       | `assets/door.png`      | image       | **Building/venue door** — a single 16×32 LimeZu door, drawn over door-type warps (see Map transitions). Sliced by `gen-tiles-interior.py` alongside the interior tileset |
 | `font`       | `assets/font.png`      | image       | bitmap-font atlas; loaded in BootScene, see Text below  |
 
 **Overworld characters are real art** (LimeZu Modern Interiors, free): the player and every NPC
@@ -862,7 +870,8 @@ or drop it too.)
   gitignored) into `public/assets/char_*.png` (Python + Pillow; see `scripts/repack-characters.py`).
 - `npm run gen:tiles-interior` — slice the LimeZu interior tiles (`assets-src/limezu/Interiors_free/`,
   gitignored) into `public/assets/tileset_interior.png` (Python + Pillow; see
-  `scripts/gen-tiles-interior.py`). Used by the interior maps.
+  `scripts/gen-tiles-interior.py`). Used by the interior maps. Also slices `public/assets/door.png`
+  (the 16×32 door drawn over building/venue warps — see Map transitions).
 - `npm run smoke` — headless Playwright check (boot, walk, collision, camera, NPC dialogue).
   Needs a server running first; defaults to the dev server (`npm run dev`), override `SMOKE_URL`.
 

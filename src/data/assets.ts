@@ -14,6 +14,8 @@ export const AssetKeys = {
   TILES_INTERIOR: "tiles_interior",
   /** Bitmap-font atlas image. Loaded early in BootScene (see src/ui/font.ts). */
   FONT: "font",
+  /** A single 16x32 LimeZu door, drawn over building/venue warps (see DOOR_FRAME). */
+  DOOR: "door",
 } as const;
 
 /** Player spritesheet frame order (one 16x16 frame per facing direction). */
@@ -108,7 +110,19 @@ export const SPRITESHEETS = [
 ] as const;
 
 /** Single-image assets to load: key -> file. */
-export const IMAGES = [{ key: AssetKeys.NPC, path: "assets/npc.png" }] as const;
+export const IMAGES = [
+  { key: AssetKeys.NPC, path: "assets/npc.png" },
+  { key: AssetKeys.DOOR, path: "assets/door.png" },
+] as const;
+
+/**
+ * The door sprite is 16 wide x 32 tall (one tile wide, two tall) — the real art
+ * occupies its lower ~21px so it reads as a door standing on the floor. It's
+ * drawn foot-anchored (origin 0.5, 1) in the wall tile beside a building/venue
+ * warp, so it sits IN the wall like a real entrance. Sliced from the LimeZu pack
+ * by `scripts/gen-tiles-interior.py`. Keep this size if swapping in new art.
+ */
+export const DOOR_FRAME = { width: 16, height: 32 } as const;
 
 /**
  * Per-species battle sprites: one 32x32 PNG per musician species, generated

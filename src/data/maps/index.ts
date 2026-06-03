@@ -70,3 +70,16 @@ export const MAPS: Record<string, object> = {
 export function getMapData(key: string): object | undefined {
   return MAPS[key];
 }
+
+/**
+ * True if a map is an INTERIOR (it embeds the `interior` tileset — venues, the
+ * studio, the Tower lobby, etc.) rather than an outdoor map. Used to classify
+ * warps: a warp that crosses the indoor/outdoor boundary (either side interior)
+ * is a building DOOR; an outdoor↔outdoor warp is a seamless path continuation.
+ * (Wall-adjacency can't tell them apart — outdoor edge warps also abut the
+ * border wall — so interior involvement is the reliable signal.)
+ */
+export function isInteriorMap(key: string): boolean {
+  const data = MAPS[key] as { tilesets?: Array<{ name?: string }> } | undefined;
+  return data?.tilesets?.some((ts) => ts.name === "interior") ?? false;
+}
