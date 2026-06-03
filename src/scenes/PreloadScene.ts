@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT } from "../data/constants";
-import { SPRITESHEETS, IMAGES, FRAME_CONFIG, AUDIO, CHARACTER_SHEETS, CHARACTER_FRAME } from "../data/assets";
+import { SPRITESHEETS, IMAGES, FRAME_CONFIG, AUDIO, CHARACTER_SHEETS, CHARACTER_FRAME, BATTLERS } from "../data/assets";
 import { createText } from "../ui/text";
 
 /**
@@ -28,6 +28,10 @@ export class PreloadScene extends Phaser.Scene {
     }
     for (const img of IMAGES) {
       this.load.image(img.key, img.path);
+    }
+    // Per-species battle sprites (battler_<speciesId>.png).
+    for (const battler of BATTLERS) {
+      this.load.image(battler.key, battler.path);
     }
     for (const sound of AUDIO) {
       this.load.audio(sound.key, sound.path);
